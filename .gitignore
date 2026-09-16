@@ -19,3 +19,6 @@ video-promo/
 # OS / editor
 .DS_Store
 *.log
+
+# never track the dev symlink
+/node_modules
