@@ -1,6 +1,7 @@
 import config from '@/config/game.json';
 import { FAMILY_MEMBERS,familyPresent,newFamily,parseFamily,spendFamilyTime,type FamilyState } from './family';
 import { respondToMoment,tickFamily,type MomentResponse } from './family-moments';
+import {newNeighborhood,parseNeighborhood,tickNeighborhood,type NeighborhoodState} from './neighborhood';
 import { STAGES, type Skill } from './story';
 import { finishDirectedScene,tickStoryDirector } from './story-director';
 import {newDirector,parseDirector,type DirectedResponse,type DirectorState} from './story-director-state';
@@ -19,6 +20,7 @@ export interface LifeState {
   family:FamilyState;
   gender:'boy'|'girl'|null;
   director:DirectorState;
+  neighborhood:NeighborhoodState;
 }
 export const JOBS = [
   { id: 'story-editor', name: 'Story editor', wage: 120, skill: 'creativity' as Skill, level: 0 },
@@ -42,7 +44,7 @@ export const ACTIVITIES: Record<Activity, { label: string; types: string[]; need
 export const NEED_NAMES: Record<Need, string> = { energy:'Energy', hunger:'Fullness', hygiene:'Hygiene', fun:'Fun', social:'Connection' };
 const clamp = (n: number) => Math.max(0, Math.min(100, n));
 export function newLife(name = 'Alex'): LifeState {
-  return { version:1, gender:null, family:newFamily(), director:newDirector(), name, minute:480, stage:0, chapter:0, money:config.startingMoney,
+  return { version:1, gender:null, family:newFamily(), director:newDirector(), neighborhood:newNeighborhood(480), name, minute:480, stage:0, chapter:0, money:config.startingMoney,
     needs:{energy:85,hunger:85,hygiene:90,fun:70,social:80}, skills:{creativity:0,learning:0,kindness:0},
     job:null, shifts:0, stageActions:0, relationships:{Rowan:20,Jules:15}, memories:[], unlocks:[],
     completed:false, city:{wellbeing:55,investment:0}, houseCost:null, health:100, partner:null, dates:{Rowan:0,Jules:0}, alarmDay:-1 };
@@ -58,8 +60,11 @@ export function passTime(s: LifeState, minutes: number): LifeState {
   for (const k of Object.keys(needs) as Need[]) needs[k]=clamp(needs[k]-minutes*(k==='hunger'?.045:k==='energy'?.028:.02));
   const guided=s.director.enabled&&s.stage>=1&&(s.director.chapters[s.stage]!.length<3||!!s.director.queuedCard);
   const event=guided?{family:s.family}:tickFamily(s.family,next,s.stage);
-  const n={...s,family:event.family,minute:next,needs,money:s.money-(s.stage>=3?days*config.dailyBills:0)};
-  return tickStoryDirector(event.text?remember(n,event.text,'family-moment',event.family.moment?.kind==='argument'?8:6):n);
+  const hood=tickNeighborhood(s.neighborhood,next);
+  let n={...s,family:event.family,minute:next,needs,money:s.money-(s.stage>=3?days*config.dailyBills:0),neighborhood:hood.state};
+  if(event.text)n=remember(n,event.text,'family-moment',event.family.moment?.kind==='argument'?8:6);
+  for(const ev of hood.events)n=remember(n,ev.text,'neighborhood',ev.importance);
+  return tickStoryDirector(n);
 }
 export function chooseDirectedStory(s:LifeState,id:string,response:DirectedResponse):LifeState{
   const n=finishDirectedScene(s,id,response);return n===s?s:passTime(n,15);
@@ -147,7 +152,8 @@ export function parseLife(raw:unknown):LifeState|null {
   const gender=s.gender??null;if(gender!==null&&gender!=='boy'&&gender!=='girl')return null;
   const director=parseDirector(s.director);if(!director)return null;
   if(director.active){const a=director.active,m=family.moment;if(a.stage!==s.stage||a.minute>s.minute||!m||m.actor!==a.actor||m.target!==a.target||m.minute!==a.minute||m.kind!==a.kind)return null;}
-  return {...s,health,partner,dates,alarmDay,family,gender,director};
+  const neighborhood=parseNeighborhood(s.neighborhood)??newNeighborhood(s.minute);
+  return {...s,health,partner,dates,alarmDay,family,gender,director,neighborhood};
 }
 
 export function hurt(s:LifeState,amount:number):LifeState {
