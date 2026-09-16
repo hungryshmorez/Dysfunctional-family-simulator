@@ -1,7 +1,21 @@
-node_modules
-dist
-*.local
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Misc build/tooling
+video-promo/
+.agents/
+*.patch
+*.tsbuildinfo
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# OS / editor
 .DS_Store
-test-results
-playwright-report
-.playwright
+*.log

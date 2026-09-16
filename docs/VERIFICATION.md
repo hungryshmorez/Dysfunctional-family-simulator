@@ -1,0 +1,51 @@
+# Verification record
+
+Turning-point story expansion: catalog tests now exercise 20 episodes and 60 unique scenes, including both paths of eight new arcs. The teen school-story gate and adult-scene gates are retained in exported cards; catalog capacity remains 64. This update changes authored story content and an unlock label, not 3D simulation systems. Visuals have not been newly verified.
+
+Story catalog update: 12 episodes, 36 unique scenes. Full suite passes: 328 tests across 35 files. Tests walk both answer paths through every episode, including the job-loss/housing chain, save/load after each consequence, adult-scene gating after import, graph age compatibility, shared-scene reuse, and atomic rejection at the 64-scene library limit. No new visual verification was performed.
+
+Verified in the build environment:
+
+Branching authored episodes: six tests cover answer-specific routing, save/load of queued follow-ups, routing after the built-in chapter is finished, terminal paths, graph-complete export, atomic imports, matching existing scenes, conflicting IDs, missing destinations, loops, consequence review with links, old-save migration and returned peer reviews without duplicate wages. Full suite: 323 tests across 34 files. These changes add library/editor controls and story routing; they do not add a hosted sharing service. Rendered UI and 3D visuals have not been visually verified for this update.
+
+Thistle Gulch-inspired director and Story editor job: full `npm test` run passes **317 tests across 33 files** (73 focused life-sim/persistence tests). Added tests exercise all six episodes through repair/escalation/avoidance routes, persistent distinct endings, scored action changes, per-participant memory isolation, scene synchronization, stale-choice rejection, pause/resume, older-save migration and corrupt-state rejection. Workshop tests cover consequence completeness, distinct peer credit, locked answers, one-time wages, no generic-work payout, playable approved cards, import without a wage and invalid-data rejection. Two React/jsdom interaction tests verify saving/locking answers, consequence-gated approval and rendering/dispatching the authored answer choices. Caption timing is covered by a reading-duration test. The test configuration now transforms JSX for these actual component interactions.
+
+Production build and TypeScript validation pass. The original Thistle Gulch runtime/Python bridge was researched but is not installed or connected. Dialogue is authored and selected by local rules; there is no LLM or hosted community backend. Rendering of the new captions and computer desk is not visually verified in a WebGL browser. Unit/component test success is not proof of 3D visual quality. Research and implementation boundaries are recorded in `THISTLE_GULCH_RESEARCH.md`.
+
+Family scene staging: four tests cover collision-free approach points with personal space, arrival before the speaking timer starts, completion without looping the same unresolved event, replanning after player interruption, cancellation on resolution, and inaccessible pairs separated by a closed wall. Total: 58 focused tests pass. ESLint passes. Scene review now has sibling argument/support previews. These tests verify navigation and scene state; rendered gestures, turn-taking labels, browser interaction and touch controls have not been visually verified here.
+
+Automatic household moments: seven tests cover game-clock scheduling, no backlog, save/load, directed argument and support effects, mediation dependent on trust, taking sides, favoritism, event preservation across dinner/conversation time skips, mood integration, save migration and invalid records, and infant/ended-life exclusion. Total: 54 focused tests pass. Events are surfaced through People and a scene response button; this does not implement paired NPC navigation or staged scenes. Browser interaction and GPU appearance were not visually verified in this update.
+
+Family body-language update: three tests cover directed household tension, absent relatives, the conversation-specific bond, mood changes after relationship changes, clearing defensive arm poses during walking, furniture activity props, head attachment and finite transforms across mood transitions. Total: 47 focused tests pass. ESLint passes. A new scene-review mood selector allows comparing the four poses. Actual GPU rendering, visual quality of gestures, label readability and touch interaction remain unverified in this update; the preview environment previously reported WebGL disabled.
+
+Conversation update: four tests cover dinner-memory retrieval, effects on both overlooked children, defensive reactions, gradual repair, grudges, per-relative cooldowns across save/load and midnight, older-save migration, invalid cooldown records, and ineligible actions. Total: 44 focused tests pass. ESLint passes. This update adds panel-based conversations; it does not add 3D conversation animations. Current browser interaction and 3D rendering were not visually verified for this update.
+
+Dinner update: three tests verify seating-dependent arguments, changes between relatives, immutable state, saved daily limits, midnight handling, valid unique seating and affordability. Total at that update: 40 focused tests. This is a panel-driven story event; a synchronized 3D dinner animation has not been added.
+
+Family update: five tests verify the five-member middle-child household, directed bonds, old-save migration, no automatic gender assignment, relatives excluded from dating, boy/girl event branching, persistent consequences, one event per chapter, and the younger sibling's childhood introduction. Total: 37 passing focused tests. Family appearance and the expanded household still need visual playtesting; procedural character models remain in use.
+
+Graphics recovery update: startup attempts standard and then non-antialiased rendering. Two tests verify the retry settings and preservation of the browser's failure reason. Total focused tests: 32. Context-loss reporting and explicit context release were added. This is not confirmation that the user's device-specific graphics failure is resolved; their browser/device and Graphics details output are still needed.
+
+September 15 visual-review pass: rechecked the cloud browser. Its renderer reports `GL_RENDERER = Disabled` and fails WebGL initialization. The new `/scene` page was opened; its title, lighting selector and explicit graphics-failure message were verified through the browser UI. The actual 3D image, lighting appearance and PNG capture could not be verified in this browser. No claim of visual parity with The Sims is made. The page deliberately avoids showing the fallback floor plan as the core scene.
+
+House-management update: three tests cover rename independence from placed houses, editing copies with draft recovery, and restoring the draft when contract storage fails. Total: 30 passing focused tests. Live editor feedback and shelf controls compile; their complete browser workflow still needs interactive verification.
+
+Social interaction update: conversation navigation tests verify spacing beside a character, collision-free approach routes, and rejection of conversations through a closed wall. The full focused suite now has 27 passing tests. Name labels, picking, facing and conversation gestures compile but still need WebGL visual playtesting.
+
+Interaction update: two additional checks verify the world-space sleep anchor on a rotated bed at child scale, preservation of the navigation position, pose reset, and clearing held props when walking resumes. Total: 25 focused tests. Appearance controls and new activity rendering require visual playtesting on a WebGL-enabled browser.
+
+September 13 update: expanded starter furnishings remain reachable in the navigation tests. The client-budget test now checks that the richer starter home exceeds the unchanged brief and that a reduced, functional furnishing set is accepted. Type checking also covers the camera controls, day/night lighting, workstation details, and articulated character code. Their rendered appearance remains unverified because of the WebGL limitation described below.
+
+- Next.js production compilation and static export for `/`, `/build`, and `/design`.
+- 23 focused tests across life logic, studio export, save recovery, and layout persistence: full seven-stage progression, paid work, death/time freeze, healing, old-save migration, invalid health rejection, separate friend targets, adult dating and relationship prerequisites, website source/origin/nonce/expiry checks, repeat-claim prevention, blueprint snapshot independence, client-brief validation, furniture/boundary collision, essential furniture pathfinding across new room entrances, unreadable-save backups, cross-tab detection, draft-key preservation, storage-quota rollback, damaged import rejection, persistent alarm cooldown, drum-pattern validation, and PCM WAV headers/clamping.
+- Native WASM city engine initializes through the same host adapter used by the browser mission. Tool placement produces 2 homes, 1 shop, 1 fire station, 12 road tiles, and $9,080 remaining funds, satisfying the assignment.
+
+Commands:
+
+```sh
+npm run build
+npm exec vitest -- run components/life-sim/blueprint-edit.test.ts components/life-sim/social-navigation.test.ts components/life-sim/character.test.ts components/life-sim/game.test.ts components/life-sim/polish.test.ts components/room-organizer/lib/persistence.test.ts components/room-organizer/hooks/use-layout-persistence.react.test.ts
+node scripts/verify-city.mjs
+```
+
+The preview loads successfully and welcome/settings controls were exercised. The cloud browser reports WebGL disabled and cannot initialize THREE.WebGLRenderer; the floor-plan fallback works, but the updated 3D rendering and house editor cannot be visually verified here. Mobile usability, audible playback, enemy pacing, iframe website receipts in-browser, and the complete house-design workflow still need interactive testing. Automated logic checks and compilation do not establish Sims-level visual quality. Neighboring houses are decorative scenery; movement remains inside the current home.

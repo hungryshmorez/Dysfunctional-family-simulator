@@ -1,0 +1,3 @@
+https://github.com/SimHacker/MicropolisCore
+69ccf87ed72d2d2950b70cf16ef1391439bd9d48
+Selected engine source, makefiles, source city data and license notices.
