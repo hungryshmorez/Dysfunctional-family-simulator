@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { House, houseBounds } from '../world/House';
+import { Television } from '../world/Television';
+import { roomById } from '../world/rooms';
 import { buildFamily } from '../characters/family';
 import { Character } from '../characters/Character';
 import { DramaSystem } from '../sim/DramaSystem';
@@ -16,6 +18,7 @@ export class Game {
   private readonly clock = new THREE.Clock();
   private readonly family: Character[];
   private readonly drama: DramaSystem;
+  private readonly tv: Television;
   private readonly hud: Hud;
   private readonly picker: Picker;
   private raf = 0;
@@ -49,6 +52,19 @@ export class Game {
     this.setupLights();
     this.scene.add(new House().group);
 
+    // A Static Corp CRT against the living-room back wall. Its screen doubles
+    // as a household-mood readout (see Television), so the family's conflict
+    // physically shows up as broadcast static in the world.
+    const living = roomById('living');
+    const base = import.meta.env.BASE_URL;
+    this.tv = new Television({
+      position: new THREE.Vector3(living.center.x, 0, living.center.y - living.size.y + 0.45),
+      facing: 0,
+      broadcastUrl: `${base}static-corp/broadcast.mp4`,
+      logoUrl: `${base}static-corp/static-corp-logo.png`,
+    });
+    this.scene.add(this.tv.group);
+
     this.family = buildFamily();
     for (const c of this.family) {
       this.scene.add(c.object);
@@ -56,7 +72,10 @@ export class Game {
 
     this.drama = new DramaSystem(this.family);
     this.hud = new Hud(hudRoot);
-    this.drama.onEvent((e) => this.hud.speak(e));
+    this.drama.onEvent((e) => {
+      this.hud.speak(e);
+      this.tv.reactTo(e);
+    });
 
     this.picker = new Picker(
       canvas,
@@ -88,6 +107,7 @@ export class Game {
       const dt = Math.min(this.clock.getDelta(), 0.05);
       for (const c of this.family) c.update(dt);
       this.drama.update(dt);
+      this.tv.update(dt);
       this.controls.update();
       this.hud.update(dt, this.camera, this.canvas);
       this.renderer.render(this.scene, this.camera);
@@ -108,6 +128,7 @@ export class Game {
     window.removeEventListener('resize', this.resize);
     this.picker.dispose();
     this.controls.dispose();
+    this.tv.dispose();
     for (const c of this.family) c.rig.dispose();
     this.renderer.dispose();
   }

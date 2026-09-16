@@ -35,3 +35,23 @@ test('scene mounts and renders a live WebGL canvas', async ({ page }) => {
 
   expect(errors, `page errors: ${errors.join('\n')}`).toHaveLength(0);
 });
+
+test('the Static Corp television is present in the world', async ({ page }) => {
+  await page.goto('/');
+  await expect.poll(() => page.evaluate(() => '__game' in window)).toBe(true);
+
+  // The TV creates a <video> element for its broadcast texture.
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Array.from(document.querySelectorAll('video')).some((v) =>
+          v.src.includes('static-corp/broadcast')
+        )
+      )
+    )
+    .toBe(true);
+
+  // The broadcast asset is actually served (not a 404).
+  const res = await page.request.get('/static-corp/broadcast.mp4');
+  expect(res.status()).toBe(200);
+});
