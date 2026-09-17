@@ -191,3 +191,17 @@ export function soundAlarm(s:LifeState):LifeState {
   const day=Math.floor(s.minute/1440)+1;
   return s.health<=0||s.completed||s.alarmDay===day?s:{...s,alarmDay:day};
 }
+export const HOSPITAL_COST=60;
+/** Why a clinic visit can't happen, or null when it can. */
+export function hospitalError(s:LifeState):string|null {
+  if(s.completed||s.health<=0)return 'This life has ended.';
+  if(s.health>=100)return 'You are not hurt.';
+  if(s.money<HOSPITAL_COST)return `A clinic visit costs $${HOSPITAL_COST}.`;
+  return null;
+}
+/** Pay to get patched up: costs money and time, restores health. */
+export function hospitalVisit(s:LifeState):LifeState {
+  if(hospitalError(s))return s;
+  const n=passTime(s,120);
+  return remember({...n,money:n.money-HOSPITAL_COST,health:clamp(n.health+55)},'Got patched up at the clinic. Costly, but you can stand straight again.','health',7);
+}
