@@ -228,3 +228,18 @@
 @media (prefers-reduced-motion: reduce) {
   .life-brand strong { animation: none; }
 }
+
+/* ---- Story-beat spotlight: the authored story takes the stage ---- */
+.story-beat-backdrop{position:fixed;inset:0;z-index:150;display:grid;place-items:center;padding:22px;background:#05040acc;backdrop-filter:blur(6px)}
+.story-beat{position:relative;width:min(620px,96vw);background:radial-gradient(130% 100% at 50% 0%,#1b1330,#0b0812 72%);border:1px solid #3a2350;border-radius:6px;box-shadow:0 0 0 1px #ff2e8833,0 30px 90px #000a;padding:30px 30px 24px;color:#ece7f6;font-family:"Courier New",ui-monospace,monospace}
+.story-beat-eyebrow{font-size:11px;letter-spacing:3px;color:#ffe14d;margin:0 0 12px}
+.story-beat h2{font-size:27px;line-height:1.12;text-transform:uppercase;letter-spacing:-.5px;margin:0 0 14px;text-shadow:1.5px 0 #2ce6dd,-1.5px 0 #ff2e88}
+.story-beat-body{font-size:16px;line-height:1.7;color:#ccc3dd;margin:0 0 22px}
+.story-beat-choices{display:flex;flex-direction:column;gap:12px}
+.story-beat-choices button{text-align:left;display:flex;flex-direction:column;gap:4px;padding:16px 18px;background:#17131f;border:1px solid #322c44;border-radius:4px;color:#ece7f6;font:inherit;cursor:pointer;transition:border-color .12s,box-shadow .12s,background .12s}
+.story-beat-choices button:hover{background:#241d33;border-color:#ff2e88;box-shadow:0 0 0 1px #ff2e88,0 0 16px #ff2e8844}
+.story-beat-choices span{font-size:16px;font-weight:700;letter-spacing:.3px}
+.story-beat-choices small{font-size:11px;letter-spacing:1px;color:#9a8fb2;text-transform:uppercase}
+.story-beat-defer{margin-top:20px;width:100%;background:transparent!important;border:0!important;color:#8f84a6!important;font-size:12px;letter-spacing:1px;cursor:pointer;text-transform:uppercase}
+.story-beat-defer:hover{color:#ff2e88!important;box-shadow:none!important}
+@media(max-width:760px){.story-beat{padding:22px}.story-beat h2{font-size:22px}.story-beat-body{font-size:15px}}
