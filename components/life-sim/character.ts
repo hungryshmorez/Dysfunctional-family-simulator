@@ -1,16 +1,28 @@
 import * as THREE from 'three';
+import type { Appearance } from './appearance';
 import type { FamilyMood } from './family-mood';
 
-/** Original articulated characters; dimensions are in metres. */
-export function createCharacter(name: string, shirt: string): THREE.Group {
+/**
+ * Original articulated characters; dimensions are in metres.
+ * `look` is either a shirt colour (family/NPCs, fixed look) or a full
+ * {@link Appearance} (the player), which drives build, hair style, accessory,
+ * and the bottoms/shoes colours as well.
+ */
+export function createCharacter(name: string, look: string | Appearance): THREE.Group {
+  const custom = typeof look !== 'string' ? look : null;
+  const shirt = typeof look === 'string' ? look : look.shirt;
   const root = new THREE.Group();
   root.name = name;
-  const skin = new THREE.MeshStandardMaterial({color: name === 'Jules' ? '#a96746' : '#d6a27d', roughness: .85});
+  const skin = new THREE.MeshStandardMaterial({color: custom ? custom.skin : name === 'Jules' ? '#a96746' : '#d6a27d', roughness: .85});
   const fabric = new THREE.MeshStandardMaterial({color: shirt, roughness: .95});
-  const denim = new THREE.MeshStandardMaterial({color: '#354252', roughness: 1});
-  const hair = new THREE.MeshStandardMaterial({color: name === 'Rowan' ? '#8a5030' : '#352b2b', roughness: 1});
-  const shoe = new THREE.MeshStandardMaterial({color: '#f0e9df', roughness: .9});
-  root.userData.appearance={skin,fabric,hair};
+  const denim = new THREE.MeshStandardMaterial({color: custom ? custom.bottoms : '#354252', roughness: 1});
+  const hair = new THREE.MeshStandardMaterial({color: custom ? custom.hair : name === 'Rowan' ? '#8a5030' : '#352b2b', roughness: 1});
+  const shoe = new THREE.MeshStandardMaterial({color: custom ? custom.shoes : '#f0e9df', roughness: .9});
+  root.userData.appearance={skin,fabric,hair,denim,shoe};
+  const build = custom ? Math.max(.8, Math.min(1.3, custom.build)) : 1;
+  const hairStyle = custom ? custom.hairStyle : name === 'You' ? 'short' : 'long';
+  const accessory = custom ? custom.accessory : 'none';
+
   function ellipsoid(parent: THREE.Object3D, material: THREE.Material, x: number, y: number, z: number, sx: number, sy: number, sz: number) {
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), material);
     mesh.position.set(x,y,z); mesh.scale.set(sx,sy,sz); mesh.castShadow = true;
@@ -20,14 +32,14 @@ export function createCharacter(name: string, shirt: string): THREE.Group {
     new THREE.Vector2(.17,0),new THREE.Vector2(.18,.10),new THREE.Vector2(.195,.27),
     new THREE.Vector2(.235,.40),new THREE.Vector2(.21,.46),new THREE.Vector2(.08,.50),
   ],24),fabric);
-  torso.position.y=.89;torso.scale.z=.67;torso.castShadow=true;root.add(torso);
-  ellipsoid(root,denim,0,.84,0,.20,.15,.14);
+  torso.position.y=.89;torso.scale.set(build,1,.67*build);torso.castShadow=true;root.add(torso);
+  ellipsoid(root,denim,0,.84,0,.20*build,.15,.14*build);
   const head=new THREE.Group();head.position.y=1.43;root.add(head);root.userData.head=head;
   const face=(material:THREE.Material,x:number,y:number,z:number,sx:number,sy:number,sz:number)=>ellipsoid(head,material,x,y-1.43,z,sx,sy,sz);
   face(skin,0,1.43,0,.075,.10,.075);
   face(skin,0,1.61,0,.15,.195,.14);
-  face(hair,0,1.72,-.025,.155,.10,.145);
-  if(name !== 'You') face(hair,0,1.57,-.105,.155,.19,.075);
+  if(hairStyle!=='bald')face(hair,0,1.72,-.025,.155,.10,.145);
+  if(hairStyle==='long')face(hair,0,1.57,-.105,.155,.19,.075);
   const eye = new THREE.MeshStandardMaterial({color:'#394e50',roughness:.3});
   const white = new THREE.MeshStandardMaterial({color:'#fffaf0'});
   const lip = new THREE.MeshStandardMaterial({color:'#9b5e55',roughness:.85});
@@ -53,6 +65,16 @@ export function createCharacter(name: string, shirt: string): THREE.Group {
     for(let lace=0;lace<3;lace++)ellipsoid(knee,white,0,-.305,.07+lace*.025,.055,.008,.007);
   }
   face(skin,0,1.59,.14,.025,.032,.03);
+  // Optional accessories, parented to the head so they track head motion.
+  if(accessory==='glasses'){
+    const lens=new THREE.MeshStandardMaterial({color:'#14151c',roughness:.35,metalness:.3});
+    for(const s of [-1,1])face(lens,s*.052,1.64,.152,.032,.03,.012);
+    face(lens,0,1.64,.152,.022,.006,.01);
+  } else if(accessory==='cap'){
+    const capMat=new THREE.MeshStandardMaterial({color:'#20222c',roughness:.8});
+    face(capMat,0,1.75,-.02,.168,.095,.16);
+    face(capMat,0,1.715,.115,.15,.022,.13);
+  }
   // Cache the articulated joints; avoid scene-graph searches every frame.
   root.userData.joints=Object.fromEntries(['leftArm','rightArm','leftLeg','rightLeg','leftKnee','rightKnee','leftElbow','rightElbow'].map(key=>[key,root.getObjectByName(key)]));
   const body=new THREE.Group();body.name='body';

@@ -6,7 +6,7 @@ import { disposeObject } from '@/components/room-organizer/three/builder-utils';
 import { createFurnitureModel } from '@/components/room-organizer/three/furniture-builders';
 import { renderInteriorWalls } from '@/components/room-organizer/three/interior-walls';
 import { applyWallDisplay, buildRoom } from '@/components/room-organizer/three/room-builder';
-import { AppearancePanel,DEFAULT_APPEARANCE,parseAppearance } from './appearance';
+import { AppearancePanel,DEFAULT_APPEARANCE,parseAppearance,structuralKey } from './appearance';
 import { animateCharacter, createCharacter, poseAtFurniture } from './character';
 import { clearCustomRig, hasCustomRig, loadStoredRig, storeCustomRig, type LoadedRig } from './custom-rig';
 import {dialogueAt,dialogueDuration} from './dialogue-timing';
@@ -33,6 +33,7 @@ export function World(props:WorldProps):JSX.Element {
   const [appearance,setAppearance]=useState(DEFAULT_APPEARANCE),[styling,setStyling]=useState(false);
   const [rigVersion,setRigVersion]=useState(0);
   const look=useRef(appearance);look.current=appearance;
+  const styleKey=structuralKey(appearance);
   useEffect(()=>{try{const saved=parseAppearance(JSON.parse(localStorage.getItem('yourspace-appearance')??'null'));if(saved)setAppearance(saved);}catch{/* Keep the default if this optional preference is unavailable. */}},[]);
   const [view,setView]=useState<'home'|'follow'>('home'),[walls,setWalls]=useState(false);
   const presentation=useRef({view,walls}),cameraAction=useRef<(action:string)=>void>(()=>{});
@@ -62,7 +63,7 @@ export function World(props:WorldProps):JSX.Element {
     const interactables:THREE.Object3D[]=[];
     for(const item of floor.items){if(!item.position)continue;const model=createFurnitureModel(THREE,item,false);detailFurniture(model,item);model.position.set(item.position.x,0,item.position.z);model.rotation.y=item.rotation??0;model.traverse(o=>{o.userData.lifeItem=item.id;});scene.add(model);interactables.push(model);}
     const person=(id:string,color:string)=>{const m=createCharacter(id,color);scene.add(m);return m;};
-    const avatar=person('You','#faac49');const spawn=findPath({x:0,z:1},{x:0,z:1},floor,props.home.width,props.home.height)?.[0]??{x:0,z:0};avatar.position.set(spawn.x,0,spawn.z);
+    const avatar=createCharacter('You',look.current);scene.add(avatar);const spawn=findPath({x:0,z:1},{x:0,z:1},floor,props.home.width,props.home.height)?.[0]??{x:0,z:0};avatar.position.set(spawn.x,0,spawn.z);
     // Swap in a player-uploaded model, if any, keeping the procedural avatar as
     // the transform root so all movement/camera code is unchanged.
     let disposed=false,customRig:LoadedRig|null=null;
@@ -97,8 +98,8 @@ export function World(props:WorldProps):JSX.Element {
     function frame(){raf=requestAnimationFrame(frame);const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;const p=live.current;
       if(!p.command)path=[];if(p.paused)keys.clear();
       const scale=p.stage===0?.45:p.stage===1?.68:p.stage===2?.88:1;avatar.scale.setScalar(scale);
-      const lookKey=look.current.skin+look.current.hair+look.current.shirt;
-      if(previousLook!==lookKey&&!avatar.userData.custom){previousLook=lookKey;const materials=avatar.userData.appearance;materials.skin.color.set(look.current.skin);materials.hair.color.set(look.current.hair);materials.fabric.color.set(look.current.shirt);}
+      const lookKey=look.current.skin+look.current.hair+look.current.shirt+look.current.bottoms+look.current.shoes;
+      if(previousLook!==lookKey&&!avatar.userData.custom){previousLook=lookKey;const materials=avatar.userData.appearance;materials.skin.color.set(look.current.skin);materials.hair.color.set(look.current.hair);materials.fabric.color.set(look.current.shirt);materials.denim.color.set(look.current.bottoms);materials.shoe.color.set(look.current.shoes);}
       companions.forEach(m=>{if(m.userData.familyId){m.visible=familyPresent(m.userData.familyId,p.stage);m.scale.setScalar(m.userData.familyId==='older'?(p.stage===0?.7:p.stage===1?.88:1):m.userData.familyId==='younger'?(p.stage<=1?.55:p.stage===2?.8:1):1);}});
       const conversation=companions.find(m=>m.visible&&m.userData.person===(p.command?.person??(p.activity==='talk'?p.socialName:undefined)));
       companions.forEach(m=>{
@@ -185,6 +186,6 @@ export function World(props:WorldProps):JSX.Element {
     const contextLost=(event:Event)=>{event.preventDefault();setGraphicsError('The browser lost the graphics context while the scene was running. Close other graphics-heavy tabs and retry 3D.');setFallback(true);live.current.onError('3D stopped because the browser lost its graphics context.');};
     renderer.domElement.addEventListener('webglcontextlost',contextLost);
     return()=>{disposed=true;customRig?.dispose();cancelAnimationFrame(raf);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',blur);observer.disconnect();renderer.domElement.removeEventListener('pointerdown',start);renderer.domElement.removeEventListener('pointerup',pick);renderer.domElement.removeEventListener('webglcontextlost',contextLost);controls.dispose();disposeObject(scene);renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
-  },[props.home,fallback,rigVersion]);
+  },[props.home,fallback,rigVersion,styleKey]);
   return fallback?<>{!props.sceneReview&&<FlatWorld {...props}/>}<div className="graphics-notice"><b>3D graphics unavailable in this browser</b><span>{props.sceneReview?'Scene review needs a browser with WebGL graphics support.':'This is the compatibility floor plan.'}</span><button onClick={()=>setFallback(false)}>Retry 3D</button><details><summary>Graphics details</summary><p>{graphicsError}</p></details></div></>:<><div className="life-world" ref={host} aria-label="Your home. Drag to rotate, pinch to zoom, tap furniture to interact."/>{caption&&<div className="family-caption" role="status"><strong>{caption.name}</strong><span>{caption.text}</span></div>}<div className="world-camera" aria-label="Camera controls"><button aria-pressed={view==='home'} onClick={()=>{setView('home');cameraAction.current('home');}}>House view</button><button aria-pressed={view==='follow'} onClick={()=>{setView('follow');cameraAction.current('follow');}}>Follow me</button><button aria-label="Zoom in" onClick={()=>cameraAction.current('in')}>+</button><button aria-label="Zoom out" onClick={()=>cameraAction.current('out')}>−</button><button aria-pressed={walls} onClick={()=>setWalls(v=>!v)}>{walls?'Lower walls':'Raise walls'}</button><button aria-pressed={styling} onClick={()=>setStyling(v=>!v)}>Your look</button><button onClick={()=>cameraAction.current('capture')}>Save scene image</button></div>{styling&&<AppearancePanel value={appearance} hasRig={hasCustomRig()} onClose={()=>setStyling(false)} onChange={next=>{setAppearance(next);try{localStorage.setItem('yourspace-appearance',JSON.stringify(next));}catch{live.current.onError('Your look changed, but could not be saved in this browser.');}}} onUploadRig={file=>{storeCustomRig(file).then(()=>setRigVersion(v=>v+1)).catch(err=>live.current.onError(err instanceof Error?err.message:'Could not save that model.'));}} onClearRig={()=>{clearCustomRig().then(()=>setRigVersion(v=>v+1)).catch(()=>live.current.onError('Could not remove the custom model.'));}}/>}</>;
 }
