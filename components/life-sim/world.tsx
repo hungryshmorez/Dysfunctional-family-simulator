@@ -25,7 +25,7 @@ import type { FurnitureItem, RoomLayout, Vec2 } from '@/components/room-organize
 
 export interface MoveCommand { id:number; target:Vec2; item?:FurnitureItem; person?:string }
 export interface WorldProps { storyScene?:DirectedScene|null; family?:FamilyState; minute?:number; activity?:string; sceneReview?:boolean; socialName?:string; onPerson?:(name:string)=>void }
-export interface WorldProps { home:RoomLayout; stage:number; command:MoveCommand|null; paused:boolean; danger:boolean; movement:string; sprint:boolean; repel:number; onThreatState:(state:{phase:string;seconds:number})=>void; onManual:()=>void; onHurt:(amount:number)=>void; onThreat:(message:string)=>void; onSelect:(item:FurnitureItem)=>void; onWalk:(point:Vec2)=>void; onArrive:(id:number,success:boolean)=>void; onError:(message:string)=>void }
+export interface WorldProps { home:RoomLayout; stage:number; command:MoveCommand|null; paused:boolean; danger:boolean; movement:string; sprint:boolean; repel:number; onThreatState:(state:{phase:string;seconds:number})=>void; onManual:()=>void; onHurt:(amount:number)=>void; onProwlerCatch?:()=>void; onThreat:(message:string)=>void; onSelect:(item:FurnitureItem)=>void; onWalk:(point:Vec2)=>void; onArrive:(id:number,success:boolean)=>void; onError:(message:string)=>void }
 export function World(props:WorldProps):JSX.Element {
   const [fallback,setFallback]=useState(false);
   const [graphicsError,setGraphicsError]=useState('');
@@ -131,7 +131,7 @@ export function World(props:WorldProps):JSX.Element {
           if(threat==='quiet'&&dangerClock>45){threat='warning';p.onThreat('A prowler is approaching. You have 8 seconds. Keep moving; hold Shift to run.');}
           if(threat==='warning'&&dangerClock>53){const target={x:avatar.position.x>0?-p.home.width/2+1:p.home.width/2-1,z:avatar.position.z>0?-p.home.height/2+1:p.home.height/2-1};const route=findPath({x:avatar.position.x,z:avatar.position.z},target,floor,p.home.width,p.home.height);const spawnEnemy=route?.at(-1);if(spawnEnemy&&Math.hypot(spawnEnemy.x-avatar.position.x,spawnEnemy.z-avatar.position.z)>3){prowler.position.set(spawnEnemy.x,0,spawnEnemy.z);prowler.visible=true;attackLeft=24;repath=0;threat='attack';p.onThreat('Prowler! Survive 24 seconds, run away, or use your alarm.');}else{threat='quiet';dangerClock=0;p.onThreat('The prowler could not reach your home.');}}
           if(threat==='attack'){attackLeft-=dt;repath-=dt;if(repath<=0){repath=.8;enemyPath=findPath({x:prowler.position.x,z:prowler.position.z},{x:avatar.position.x,z:avatar.position.z},floor,p.home.width,p.home.height)??[];}move(prowler,enemyPath,dt*1.55);
-            if(hitCooldown<=0&&prowler.position.distanceTo(avatar.position)<.75){hitCooldown=2;p.onHurt(12);}
+            if(hitCooldown<=0&&prowler.position.distanceTo(avatar.position)<.75){hitCooldown=2;if(p.onProwlerCatch)p.onProwlerCatch();else p.onHurt(12);}
             if(attackLeft<=0){prowler.visible=false;threat='quiet';dangerClock=0;p.onThreat('The prowler gave up. You are safe for now. Rest to recover health.');}}
         }
         const moment=p.family?.moment??null;
