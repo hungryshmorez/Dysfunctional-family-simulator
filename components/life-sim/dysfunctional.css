@@ -243,3 +243,5 @@
 .story-beat-defer{margin-top:20px;width:100%;background:transparent!important;border:0!important;color:#8f84a6!important;font-size:12px;letter-spacing:1px;cursor:pointer;text-transform:uppercase}
 .story-beat-defer:hover{color:#ff2e88!important;box-shadow:none!important}
 @media(max-width:760px){.story-beat{padding:22px}.story-beat h2{font-size:22px}.story-beat-body{font-size:15px}}
+
+.family-belief{color:#2ce6dd!important;font-style:italic}
