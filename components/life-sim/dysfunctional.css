@@ -1,0 +1,230 @@
+/* ============================================================================
+   DYSFUNCTIONAL SKIN — a grimy VHS / neon-glitch reskin of the life-sim UI.
+   Additive: loaded after globals.css + polish.css so it overrides the clean
+   light theme via cascade order, without touching the base rules. Phase 1 of
+   the redesign is visual identity; behaviour and layout are untouched.
+   ============================================================================ */
+
+.life-app {
+  --ink: #ece7f6;
+  --muted: #9a8fb2;
+  --line: #2b2637;
+  --accent: #ff2e88;
+  --magenta: #ff2e88;
+  --cyan: #2ce6dd;
+  --acid: #ffe14d;
+  --danger: #ff3b52;
+  --panel: #14111d;
+  --panel-2: #1b1726;
+  background:
+    radial-gradient(120% 90% at 50% -10%, #1a1430 0%, #0c0b12 55%, #070610 100%);
+  color: var(--ink);
+  font-family: "Courier New", ui-monospace, Menlo, monospace;
+}
+
+/* Global CRT scanlines + a faint grain veil over everything. */
+.life-app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+}
+.life-app::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 201;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");
+}
+
+/* --- Chrome: header, stages, bottom bar --- */
+.life-header,
+.life-bottom {
+  background: linear-gradient(180deg, #17121f, #0e0b16);
+  border-color: var(--line);
+}
+.life-stages {
+  background: #0e0b16;
+}
+.life-mark {
+  background: #ff2e88;
+  color: #0b0a12;
+  border-radius: 4px;
+  box-shadow: 3px 3px 0 #2ce6dd;
+  transform: rotate(-3deg);
+}
+.life-brand strong {
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+  color: #fff;
+  text-shadow: 2px 0 var(--cyan), -2px 0 var(--magenta);
+  animation: dysf-glitch 4.5s infinite steps(1);
+}
+.life-brand small {
+  color: var(--acid);
+  letter-spacing: 3px;
+}
+.life-clock strong {
+  color: var(--cyan);
+}
+.life-wallet strong {
+  color: var(--acid);
+  text-shadow: 0 0 12px #ffe14d55;
+}
+.life-stages .current {
+  border-bottom-color: var(--magenta);
+  color: #fff;
+}
+.life-stages .current span {
+  background: var(--magenta);
+  border-color: var(--magenta);
+  color: #0b0a12;
+}
+.life-stages span {
+  border-color: #3a3450;
+}
+
+/* --- Buttons: dark chips with a neon hover --- */
+.life-app button {
+  background: #17131f;
+  border: 1px solid #322c44;
+  color: #e7e2f2;
+  border-radius: 3px;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+.life-app button:hover {
+  background: #241d33;
+  border-color: var(--magenta);
+  color: #fff;
+  box-shadow: 0 0 0 1px var(--magenta), 0 0 14px #ff2e8855;
+}
+.life-app .life-primary,
+.life-actions .computer-action {
+  background: var(--magenta);
+  border-color: var(--magenta);
+  color: #0b0a12;
+  font-weight: 700;
+  box-shadow: 3px 3px 0 #2ce6dd;
+}
+.life-app .life-primary:hover {
+  background: #ff4f9c;
+  box-shadow: 3px 3px 0 #2ce6dd, 0 0 18px #ff2e8877;
+}
+
+/* --- Surfaces: sidebar, panels, cards, modals --- */
+.life-sidebar,
+.life-header,
+.life-interact,
+.life-computer,
+.life-settings,
+.appearance-panel {
+  background: var(--panel);
+}
+.life-scene-wrap {
+  background: #06050b;
+}
+.life-lot strong { color: var(--cyan); }
+.life-lot span { color: var(--acid); }
+.life-hint,
+.life-status span {
+  background: #140f1fdd;
+  color: #e7e2f2;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+.life-build {
+  background: #140f1fdd;
+  color: var(--cyan) !important;
+  border: 1px solid var(--magenta);
+}
+.life-tabs button.active {
+  border-color: var(--magenta);
+  color: var(--magenta);
+}
+.life-sidebar-content h2,
+.life-desktop h2 {
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+  color: #fff;
+  text-shadow: 1.5px 0 var(--cyan), -1.5px 0 var(--magenta);
+}
+.life-eyebrow { color: var(--acid) !important; letter-spacing: 2px; }
+.life-note { color: #8f84a6 !important; }
+.life-person-row,
+.life-interact,
+.life-jobs > div {
+  border-color: var(--line);
+  background: var(--panel-2);
+}
+.life-person-row strong { color: #fff; }
+.life-avatar {
+  background: #ff2e88;
+  color: #0b0a12;
+  box-shadow: 3px 3px 0 #2ce6dd;
+}
+.life-objective {
+  background: #241a10;
+  color: var(--acid) !important;
+  border: 1px solid #4a3a1a;
+}
+.life-choices button {
+  background: var(--panel-2);
+  border-color: #322c44;
+}
+.life-memory {
+  border-left-color: var(--magenta);
+}
+.life-memory small { color: var(--cyan); }
+
+/* --- Meters: needs / progress read as glitchy toxic bars --- */
+.life-app progress {
+  background: #241f31;
+  height: 7px;
+  border-radius: 0;
+}
+.life-app progress::-webkit-progress-bar { background: #241f31; }
+.life-app progress::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--cyan), var(--magenta));
+  border-radius: 0;
+}
+.life-app progress.low::-webkit-progress-value { background: var(--danger); }
+
+/* --- Modals: darker, harder --- */
+.life-modal-backdrop { background: #05040acc; }
+.life-computer > header,
+.life-settings header { background: linear-gradient(180deg, #1c1430, #120d1f); }
+.life-loading {
+  background: #06050b;
+  color: var(--magenta);
+  font-family: "Courier New", monospace;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+/* --- Threat / danger reads loud and nasty --- */
+.threat-banner,
+.pause-ribbon {
+  border: 1px solid var(--danger);
+  background: #1a0c12ee !important;
+  color: #ffd7de;
+}
+
+@keyframes dysf-glitch {
+  0%, 92%, 100% { text-shadow: 2px 0 var(--cyan), -2px 0 var(--magenta); transform: translate(0, 0); }
+  93% { text-shadow: -3px 0 var(--cyan), 3px 0 var(--magenta); transform: translate(1px, -1px); }
+  95% { text-shadow: 3px 0 var(--danger), -2px 0 var(--cyan); transform: translate(-1px, 1px); }
+  97% { text-shadow: 2px 0 var(--cyan), -2px 0 var(--magenta); transform: translate(1px, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .life-brand strong { animation: none; }
+}
