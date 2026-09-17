@@ -42,16 +42,16 @@ export function World(props:WorldProps):JSX.Element {
     if(fallback||!host.current)return;const el=host.current;let renderer:THREE.WebGLRenderer;let reducedQuality=false;
     try{const started=startGraphics();renderer=started.renderer;reducedQuality=started.reducedQuality;}catch(error){setGraphicsError(error instanceof Error?error.message:String(error));setFallback(true);live.current.onError('3D could not start. Open Graphics details for the browser’s failure reason.');return;}
     renderer.setPixelRatio(reducedQuality?1:Math.min(window.devicePixelRatio,2));renderer.shadowMap.enabled=!reducedQuality;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-    renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;el.appendChild(renderer.domElement);
-    const scene=new THREE.Scene();scene.background=new THREE.Color('#b7cbbb');scene.fog=new THREE.Fog('#b7cbbb',35,85);
+    renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.9;el.appendChild(renderer.domElement);
+    const scene=new THREE.Scene();scene.background=new THREE.Color('#33313d');scene.fog=new THREE.Fog('#242230',22,68);
     const camera=new THREE.PerspectiveCamera(38,1,.1,150);const span=Math.max(props.home.width,props.home.height);camera.position.set(span*.82,span*.85,span*.98);
     const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,0.3,0);controls.enableDamping=true;controls.maxPolarAngle=Math.PI/2.2;controls.minDistance=5;controls.maxDistance=65;controls.update();
-    const sky=new THREE.HemisphereLight('#e9f5ff','#6b7155',2);scene.add(sky);
+    const sky=new THREE.HemisphereLight('#616a78','#161520',1.4);scene.add(sky);
     const roomLights=[[-3,1.9,-3],[3.7,1.9,-3],[-3,1.9,1.5],[3,1.9,1]].map(([x,y,z])=>{const light=new THREE.PointLight('#ffdda6',0,8,2);light.position.set(x!,y!,z!);scene.add(light);return light;});
-    const sun=new THREE.DirectionalLight('#fff1d8',3);sun.position.set(-8,16,10);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-14;sun.shadow.camera.right=14;sun.shadow.camera.top=14;sun.shadow.camera.bottom=-14;sun.shadow.normalBias=.03;scene.add(sun);
-    const ground=new THREE.Mesh(new THREE.PlaneGeometry(140,140),new THREE.MeshStandardMaterial({color:'#75a789',roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-.3;ground.receiveShadow=true;scene.add(ground);
-    const edging=new THREE.Mesh(new THREE.BoxGeometry(props.home.width+.55,.18,props.home.height+.55),new THREE.MeshStandardMaterial({color:'#e4d9bc',roughness:.95}));edging.position.y=-.18;edging.receiveShadow=true;scene.add(edging);
-    for(let i=0;i<10;i++){const angle=i/10*Math.PI*2,distance=span*.9+2;const tree=new THREE.Group();const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.12,.18,1.6,6),new THREE.MeshStandardMaterial({color:'#88725c'}));trunk.position.y=.5;const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(1.2,1),new THREE.MeshStandardMaterial({color:i%2?'#608a6c':'#88a278',roughness:1}));crown.position.y=1.9;crown.scale.set(1,1.3,1);crown.castShadow=true;tree.add(trunk,crown);tree.position.set(Math.cos(angle)*distance,-.2,Math.sin(angle)*distance);scene.add(tree);}
+    const sun=new THREE.DirectionalLight('#cdba8f',2.1);sun.position.set(-8,16,10);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-14;sun.shadow.camera.right=14;sun.shadow.camera.top=14;sun.shadow.camera.bottom=-14;sun.shadow.normalBias=.03;scene.add(sun);
+    const ground=new THREE.Mesh(new THREE.PlaneGeometry(140,140),new THREE.MeshStandardMaterial({color:'#242119',roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-.3;ground.receiveShadow=true;scene.add(ground);
+    const edging=new THREE.Mesh(new THREE.BoxGeometry(props.home.width+.55,.18,props.home.height+.55),new THREE.MeshStandardMaterial({color:'#33302a',roughness:.95}));edging.position.y=-.18;edging.receiveShadow=true;scene.add(edging);
+    for(let i=0;i<10;i++){const angle=i/10*Math.PI*2,distance=span*.9+2;const tree=new THREE.Group();const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.12,.18,1.6,6),new THREE.MeshStandardMaterial({color:'#3d362d'}));trunk.position.y=.5;const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(1.2,1),new THREE.MeshStandardMaterial({color:i%2?'#3a4232':'#4a452e',roughness:1}));crown.position.y=1.9;crown.scale.set(1,1.3,1);crown.castShadow=true;tree.add(trunk,crown);tree.position.set(Math.cos(angle)*distance,-.2,Math.sin(angle)*distance);scene.add(tree);}
     const floor=props.home.floors[0]!;
     buildRoom(THREE,{scene,width:props.home.width,depth:props.home.height,floorColor:floor.floorColor,floorPattern:floor.floorPattern,wallColors:floor.wallColors,hiddenWalls:floor.hiddenWalls,floorPlanImage:null,floorPlanOpacity:0,floorPlanFitMode:'stretch',floorPlan3DEffect:false});
     renderInteriorWalls(THREE,scene,floor.interiorWalls??[],0,undefined,{openingCandidates:floor.items,roomWidth:props.home.width,roomDepth:props.home.height});
@@ -163,9 +163,9 @@ export function World(props:WorldProps):JSX.Element {
       const seconds=threat==='warning'?Math.max(0,Math.ceil(53-dangerClock)):threat==='attack'?Math.max(0,Math.ceil(attackLeft)):0;const threatKey=threat+seconds;if(lastThreat!==threatKey){lastThreat=threatKey;p.onThreatState({phase:threat,seconds});}
       const hour=((p.minute??600)%1440)/60;
       const daylight=Math.max(0,Math.sin((hour-6)/12*Math.PI));
-      sky.intensity=.65+daylight*1.2;sun.intensity=.12+daylight*2.6;
+      sky.intensity=.4+daylight*.7;sun.intensity=.1+daylight*1.5;
       sun.position.set(Math.cos((hour-6)/12*Math.PI)*16,4+daylight*16,8);
-      const background=new THREE.Color('#283c59').lerp(new THREE.Color('#b7cbbb'),daylight);
+      const background=new THREE.Color('#0c0a12').lerp(new THREE.Color('#33313d'),daylight);
       scene.background=background;if(scene.fog instanceof THREE.Fog)scene.fog.color.copy(background);
       roomLights.forEach(light=>{light.intensity=7+(1-daylight)*18;});
       if(presentation.current.view==='follow'){
