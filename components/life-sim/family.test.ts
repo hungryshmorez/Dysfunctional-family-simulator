@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {dateError,finishActivity,newLife,parseLife} from './engine';
-import {FAMILY_MEMBERS,newFamily} from './family';
+import {FAMILY_MEMBERS,fightFamilyMember,newFamily} from './family';
 import {familyPressure,resolveFamilyPressure} from './family-events';
 describe('middle-child household',()=>{
   it('has two parents and two siblings with the player in the middle',()=>{const f=newFamily();expect(FAMILY_MEMBERS.filter(m=>m.role==='parent')).toHaveLength(2);expect(FAMILY_MEMBERS.filter(m=>m.role==='sibling')).toHaveLength(2);expect(f.birthOrder).toEqual(['older','self','younger']);expect(f.bonds.older.younger).toBeDefined();expect(f.bonds.younger.older).not.toBe(f.bonds.older.younger);});
@@ -8,4 +8,17 @@ describe('middle-child household',()=>{
   it('spending time changes family bonds without adding relatives to dating',()=>{const s={...newLife(),stage:3};const next=finishActivity(s,'talk','family:older');expect(next.family.bonds.older.self!.affection).toBeGreaterThan(s.family.bonds.older.self!.affection);expect(next.relationships).toEqual(s.relationships);expect(next.family.bonds['parent-a'].younger).toEqual(s.family.bonds['parent-a'].younger);expect(dateError(next,'family:older')).not.toBeNull();});
   it('uses different expectations with lasting choices, once per chapter',()=>{const boy={...newLife(),stage:2,gender:'boy' as const},girl={...boy,gender:'girl' as const};expect(familyPressure(boy)).not.toBe(familyPressure(girl));const result=resolveFamilyPressure(boy,'comply');expect(result.family.bonds.self['parent-b']!.resentment).toBe(10);expect(result.family.bonds['parent-b'].self!.affection).toBeGreaterThan(boy.family.bonds['parent-b'].self!.affection);expect(resolveFamilyPressure(result,'support')).toBe(result);expect(familyPressure({...result,gender:'girl'})).toBeNull();expect(parseLife(JSON.parse(JSON.stringify(result)))?.family).toEqual(result.family);});
   it('introduces the youngest in childhood and preserves a support response',()=>{const baby=newLife();expect(finishActivity(baby,'talk','family:younger')).toBe(baby);const child={...baby,stage:1,gender:'girl' as const};const result=resolveFamilyPressure(child,'support');expect(result.family.bonds.younger.self!.trust).toBeGreaterThan(child.family.bonds.younger.self!.trust);expect(result.memories[0]!.topic).toBe('family');});
+});
+
+describe('fightFamilyMember',()=>{
+  it('raises resentment and lowers affection/trust both ways, within bounds',()=>{
+    const f=newFamily();
+    const before=f.bonds.self.older!;
+    const n=fightFamilyMember(f,'older');
+    expect(n.bonds.self.older!.resentment).toBe(Math.min(100,before.resentment+24));
+    expect(n.bonds.self.older!.affection).toBe(Math.max(0,before.affection-15));
+    expect(n.bonds.older.self!.trust).toBe(Math.max(0,f.bonds.older.self!.trust-12));
+    expect(f.bonds.self.older!.resentment).toBe(before.resentment);
+  });
+  it('is a no-op against self',()=>{const f=newFamily();expect(fightFamilyMember(f,'self')).toBe(f);});
 });

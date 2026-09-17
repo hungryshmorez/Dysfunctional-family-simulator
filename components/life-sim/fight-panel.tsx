@@ -77,7 +77,7 @@ export function FightPanel({ setup, onComplete, onClose }: { setup: FightSetup; 
     return () => { cancelAnimationFrame(raf.current); window.removeEventListener('keydown', key); };
   }, [phase]);
 
-  const result: FightResult = { opponent: setup.opponent, instigatedByPlayer: setup.instigatedByPlayer, playerHP, opponentHP: oppHP };
+  const result: FightResult = { opponent: setup.opponent, instigatedByPlayer: setup.instigatedByPlayer, playerHP, opponentHP: oppHP, familyId: setup.familyId };
   const outcome = decideOutcome(result);
   const act = (kind: BeatKind): void => (game.current as unknown as { act?: (k: BeatKind) => void }).act?.(kind);
 

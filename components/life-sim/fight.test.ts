@@ -41,6 +41,17 @@ describe('settleFight', () => {
     expect(settleFight(dead, base({}))).toBe(dead);
   });
 
+  it('scars a family member’s bond instead of a friend relationship', () => {
+    const life = newLife();
+    const before = life.family.bonds.self.older!;
+    const next = settleFight(life, base({ opponent: 'Casey', instigatedByPlayer: true, familyId: 'older', playerHP: 0, opponentHP: 80 }));
+    const after = next.family.bonds.self.older!;
+    expect(after.resentment).toBeGreaterThan(before.resentment);
+    expect(after.affection).toBeLessThan(before.affection);
+    expect(next.family.bonds.older.self!.resentment).toBeGreaterThan(before.resentment);
+    expect(next.relationships).toEqual(life.relationships); // friends untouched
+  });
+
   it('keeps relationships within bounds and only touches a known opponent', () => {
     const life = newLife();
     const next = settleFight(life, base({ opponent: 'Stranger', instigatedByPlayer: false, playerHP: 5, opponentHP: 60 }));
