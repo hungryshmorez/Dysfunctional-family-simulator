@@ -39,4 +39,10 @@ export function spendFamilyTime(f:FamilyState,id:FamilyId):FamilyState{
   for(const [from,to] of [['self',id],[id,'self']] as [FamilyId,FamilyId][]){const bond=n.bonds[from][to]!;bond.affection=Math.min(100,bond.affection+8);bond.trust=Math.min(100,bond.trust+4);bond.resentment=Math.max(0,bond.resentment-2);}
   return n;
 }
+/** The opposite of spending time: a fight scars the bond both ways. */
+export function fightFamilyMember(f:FamilyState,id:FamilyId):FamilyState{
+  if(id==='self')return f;const n=structuredClone(f);
+  for(const [from,to] of [['self',id],[id,'self']] as [FamilyId,FamilyId][]){const bond=n.bonds[from][to]!;bond.affection=Math.max(0,bond.affection-15);bond.trust=Math.max(0,bond.trust-12);bond.resentment=Math.min(100,bond.resentment+24);}
+  return n;
+}
 export function familyPresent(id:FamilyId,stage:number):boolean{return id!=='younger'||stage>=1;}

@@ -1,4 +1,5 @@
 import { hurt, remember, type LifeState } from './engine';
+import { fightFamilyMember, type FamilyId } from './family';
 
 // A stylized fight resolves to a win or a loss, then feeds the sim (injury,
 // resentment, a memory). One house rule is absolute: if the player instigates
@@ -10,6 +11,8 @@ export interface FightSetup {
   opponent: string;
   /** True when the player threw the first punch. */
   instigatedByPlayer: boolean;
+  /** Set when the opponent is a family member, so bonds take the hit. */
+  familyId?: FamilyId;
 }
 
 export interface FightResult {
@@ -18,6 +21,7 @@ export interface FightResult {
   /** Remaining hit points at the end, 0..100. */
   playerHP: number;
   opponentHP: number;
+  familyId?: FamilyId;
 }
 
 export type FightOutcome = 'won' | 'lost';
@@ -43,8 +47,11 @@ export function settleFight(life: LifeState, result: FightResult): LifeState {
   const outcome = decideOutcome(result);
   let next = hurt(life, fightInjury(result));
 
-  // A known friend's bond takes the hit; instigating costs far more.
-  if (Object.prototype.hasOwnProperty.call(next.relationships, result.opponent)) {
+  // A family member's bonds scar (both directions); else a known friend's bond
+  // takes the hit; instigating costs far more.
+  if (result.familyId) {
+    next = { ...next, family: fightFamilyMember(next.family, result.familyId) };
+  } else if (Object.prototype.hasOwnProperty.call(next.relationships, result.opponent)) {
     const drop = result.instigatedByPlayer ? 16 : outcome === 'won' ? 4 : 8;
     next = { ...next, relationships: { ...next.relationships, [result.opponent]: clamp((next.relationships[result.opponent] ?? 0) - drop) } };
   }
