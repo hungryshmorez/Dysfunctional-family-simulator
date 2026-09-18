@@ -59,7 +59,9 @@ export function passTime(s: LifeState, minutes: number): LifeState {
   const next = s.minute + minutes;
   const days = Math.floor(next/1440)-Math.floor(s.minute/1440);
   const needs={...s.needs};
-  for (const k of Object.keys(needs) as Need[]) needs[k]=clamp(needs[k]-minutes*(k==='hunger'?.045:k==='energy'?.028:.02));
+  // Infancy: the family feeds, washes and carries you — your needs are their job,
+  // not yours, so nothing decays while you are a baby.
+  if(s.stage>0)for (const k of Object.keys(needs) as Need[]) needs[k]=clamp(needs[k]-minutes*(k==='hunger'?.045:k==='energy'?.028:.02));
   const guided=s.director.enabled&&s.stage>=1&&(s.director.chapters[s.stage]!.length<3||!!s.director.queuedCard);
   const event=guided?{family:s.family}:tickFamily(s.family,next,s.stage);
   const hood=tickNeighborhood(s.neighborhood,next);
