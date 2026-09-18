@@ -4,13 +4,14 @@ import { advanceStage, applyForJob, askPartner, chooseStory, claimVisit, finishA
 import { starterHome } from './home';
 import { blocked, findPath } from './navigation';
 import { blankDesign, contractErrors, emptyProperties, parseProperties, placeBlueprint, saveBlueprint } from './properties';
+import { STAGES } from './story';
 
 describe('life progression',()=>{
   it('plays all seven chapters with activities and paid work',()=>{
     let s=newLife();
     for(let stage=0;stage<7;stage++){
       expect(s.stage).toBe(stage);
-      for(let i=0;i<3;i++)s=chooseStory(s,0);
+      for(let i=0;i<STAGES[stage]!.events.length;i++)s=chooseStory(s,0);
       s=finishActivity(s,'sleep');s=finishActivity(s,'eat');
       if(stage===3){s=applyForJob(s,'cafe');s=finishActivity(s,'work');}
       if(stage===4){s=finishActivity(s,'sleep');s=finishActivity(s,'work');s=finishActivity(s,'sleep');s=finishActivity(s,'work');}

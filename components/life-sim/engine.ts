@@ -138,7 +138,7 @@ export function investInCity(s:LifeState):LifeState {
 export function parseLife(raw:unknown):LifeState|null {
   if(!raw||typeof raw!=='object')return null; const s=raw as LifeState;
   const finite=(n:unknown)=>typeof n==='number'&&Number.isFinite(n);
-  if(s.version!==1||typeof s.name!=='string'||s.name.length>40||!finite(s.minute)||s.minute<0||!Number.isInteger(s.stage)||s.stage<0||s.stage>6||!Number.isInteger(s.chapter)||s.chapter<0||s.chapter>3||!finite(s.money)||!finite(s.shifts)||!finite(s.stageActions)||typeof s.completed!=='boolean')return null;
+  if(s.version!==1||typeof s.name!=='string'||s.name.length>40||!finite(s.minute)||s.minute<0||!Number.isInteger(s.stage)||s.stage<0||s.stage>6||!Number.isInteger(s.chapter)||s.chapter<0||s.chapter>(STAGES[s.stage]?.events.length??3)||!finite(s.money)||!finite(s.shifts)||!finite(s.stageActions)||typeof s.completed!=='boolean')return null;
   if(!s.needs||!Object.keys(NEED_NAMES).every(k=>finite(s.needs[k as Need])&&s.needs[k as Need]>=0&&s.needs[k as Need]<=100))return null;
   if(!s.skills||!['learning','creativity','kindness'].every(k=>finite(s.skills[k as Skill])&&s.skills[k as Skill]>=0))return null;
   if(s.job!==null&&!JOBS.some(j=>j.id===s.job))return null;
