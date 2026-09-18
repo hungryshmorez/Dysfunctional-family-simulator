@@ -47,6 +47,12 @@ export function settleFight(life: LifeState, result: FightResult): LifeState {
   const outcome = decideOutcome(result);
   let next = hurt(life, fightInjury(result));
 
+  // Starting a fight leaves a mark on your record — the count the story later
+  // answers for (a caseworker, a summons, custody pressure).
+  if (result.instigatedByPlayer) {
+    next = { ...next, record: next.record + 1 };
+  }
+
   // A family member's bonds scar (both directions); else a known friend's bond
   // takes the hit; instigating costs far more.
   if (result.familyId) {

@@ -6,6 +6,8 @@ import { backupUnreadableLayout, loadLayout, saveLayout } from '@/components/roo
 import config from '@/config/game.json';
 import { newNonce, validVisit, websiteUrl, type VisitChallenge } from './bridge';
 import { CityQuest } from './city-quest';
+import { ConsequenceSpotlight } from './consequence-spotlight';
+import { pendingConsequence, resolveConsequence } from './consequences';
 import { ConversationPanel } from './conversation-panel';
 import { useGameDialogs } from './dialog-accessibility';
 import { DinnerPanel } from './dinner-panel';
@@ -50,6 +52,7 @@ export default function LifeGame():JSX.Element {
   const [fight,setFight]=useState<FightSetup|null>(null);
   const [storyOpen,setStoryOpen]=useState(false);
   const [momentOpen,setMomentOpen]=useState(false);
+  const [consequenceOpen,setConsequenceOpen]=useState(false);
   const [saveError,setSaveError]=useState(false),[ready,setReady]=useState(false);
   const [movement,setMovement]=useState(''),[repel,setRepel]=useState(0),[danger,setDanger]=useState(true),[worldKey,setWorldKey]=useState(0);
   const [sprint,setSprint]=useState(false),[hidden,setHidden]=useState(false),[help,setHelp]=useState(false),[savedAt,setSavedAt]=useState<number|null>(null);
@@ -78,6 +81,9 @@ export default function LifeGame():JSX.Element {
   // Family confrontations take the same stage as the story: pop the spotlight
   // when a fresh household moment lands (outside directed story mode).
   useEffect(()=>{if(ready&&!help&&lifeRef.current&&!lifeRef.current.completed&&!lifeRef.current.director.active&&lifeRef.current.stage>=1&&lifeRef.current.family.moment)setMomentOpen(true);},[ready,help,life?.family.moment?.minute,life?.director.active,life?.completed]);
+  // The fights you started come due: when a fresh instigation crosses a
+  // threshold, the consequence takes the stage like any other story beat.
+  useEffect(()=>{if(ready&&!help&&lifeRef.current&&pendingConsequence(lifeRef.current))setConsequenceOpen(true);},[ready,help,life?.record,life?.completed]);
   useEffect(()=>{if(!ready||paused||activeDialog||hidden||lifeRef.current?.completed)return;const t=setInterval(()=>{
     const active=runningRef.current;
     if(active){if(active.left<=1&&!completion.current){completion.current=true;setLife(s=>s?finishActivity(s,active.id,socialTarget.current):s);setRunning(null);setNotice(ACTIVITIES[active.id].label+' completed.');}else if(active.left>1){setRunning({...active,left:active.left-1});}}
@@ -145,6 +151,7 @@ export default function LifeGame():JSX.Element {
     {music&&<MusicDesk onClose={()=>setMusic(false)}/>}
     {storyOpen&&!life.completed&&!activeDialog&&STAGES[life.stage]?.events[life.chapter]&&<StoryBeat key={life.stage+'-'+life.chapter} stageName={STAGES[life.stage]!.name} chapter={life.chapter} total={STAGES[life.stage]!.events.length} event={STAGES[life.stage]!.events[life.chapter]!} onChoose={i=>{const ev=STAGES[life.stage]!.events[life.chapter]!;setLife(s=>s?chooseStory(s,i):s);const c=ev.choices[i];if(c)setNotice(c.consequence);}} onClose={()=>setStoryOpen(false)}/>}
     {momentOpen&&!storyOpen&&!activeDialog&&life.stage>=1&&!life.director.active&&life.family.moment&&<MomentSpotlight moment={life.family.moment} onRespond={r=>{setLife(s=>s?resolveHouseholdMoment(s,r):s);setMomentOpen(false);setNotice('You stepped into the moment. Read Memories for what it changed.');}} onClose={()=>setMomentOpen(false)}/>}
+    {consequenceOpen&&!storyOpen&&!momentOpen&&!activeDialog&&(()=>{const beat=pendingConsequence(life);return beat?<ConsequenceSpotlight beat={beat} onRespond={r=>{setLife(s=>s?resolveConsequence(s,beat.id,r):s);setConsequenceOpen(false);setNotice('The record catches up with you. Read Memories for the fallout.');}} onClose={()=>setConsequenceOpen(false)}/>:null;})()}
     {fight&&<FightPanel setup={fight} onClose={()=>setFight(null)} onComplete={result=>{setLife(s=>s?settleFight(s,result):s);if(result.opponent==='the prowler')setRepel(r=>r+1);setNotice(result.opponent==='the prowler'?'The prowler is gone. Read the memory for how it went.':'The fight is over. Read the memory in your Memories for the fallout.');}}/>}
   </main>;
 }

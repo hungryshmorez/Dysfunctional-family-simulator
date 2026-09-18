@@ -17,6 +17,8 @@ export interface LifeState {
   city: { wellbeing: number; investment: number }; houseCost: number | null;
   health: number; partner: string | null; dates: Record<string, number>;
   alarmDay: number;
+  /** Count of fights the player started. Aggression leaves a record the story answers for. */
+  record: number;
   family:FamilyState;
   gender:'boy'|'girl'|null;
   director:DirectorState;
@@ -44,7 +46,7 @@ export const ACTIVITIES: Record<Activity, { label: string; types: string[]; need
 export const NEED_NAMES: Record<Need, string> = { energy:'Energy', hunger:'Fullness', hygiene:'Hygiene', fun:'Fun', social:'Connection' };
 const clamp = (n: number) => Math.max(0, Math.min(100, n));
 export function newLife(name = 'Alex'): LifeState {
-  return { version:1, gender:null, family:newFamily(), director:newDirector(), neighborhood:newNeighborhood(480), name, minute:480, stage:0, chapter:0, money:config.startingMoney,
+  return { version:1, gender:null, record:0, family:newFamily(), director:newDirector(), neighborhood:newNeighborhood(480), name, minute:480, stage:0, chapter:0, money:config.startingMoney,
     needs:{energy:85,hunger:85,hygiene:90,fun:70,social:80}, skills:{creativity:0,learning:0,kindness:0},
     job:null, shifts:0, stageActions:0, relationships:{Rowan:20,Jules:15}, memories:[], unlocks:[],
     completed:false, city:{wellbeing:55,investment:0}, houseCost:null, health:100, partner:null, dates:{Rowan:0,Jules:0}, alarmDay:-1 };
@@ -152,7 +154,8 @@ export function parseLife(raw:unknown):LifeState|null {
   const director=parseDirector(s.director);if(!director)return null;
   if(director.active){const a=director.active,m=family.moment;if(a.stage!==s.stage||a.minute>s.minute||!m||m.actor!==a.actor||m.target!==a.target||m.minute!==a.minute||m.kind!==a.kind)return null;}
   const neighborhood=parseNeighborhood(s.neighborhood)??newNeighborhood(s.minute);
-  return {...s,health,partner,dates,alarmDay,family,gender,director,neighborhood};
+  const record=s.record??0;if(!Number.isInteger(record)||record<0)return null;
+  return {...s,health,partner,dates,alarmDay,family,gender,director,neighborhood,record};
 }
 
 export function hurt(s:LifeState,amount:number):LifeState {
