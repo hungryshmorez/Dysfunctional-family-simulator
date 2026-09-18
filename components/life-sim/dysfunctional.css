@@ -245,3 +245,8 @@
 @media(max-width:760px){.story-beat{padding:22px}.story-beat h2{font-size:22px}.story-beat-body{font-size:15px}}
 
 .family-belief{color:#2ce6dd!important;font-style:italic}
+
+/* Story-beat consequence phase */
+.story-beat-choice-echo{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#2ce6dd;margin:0 0 10px}
+.story-beat-continue{margin-top:8px;width:100%;padding:15px;background:#ff2e88;border:0;border-radius:4px;color:#0b0a12;font:inherit;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;box-shadow:3px 3px 0 #2ce6dd}
+.story-beat-continue:hover{background:#ff4f9c}
