@@ -25,6 +25,7 @@ import type { FurnitureItem, RoomLayout, Vec2 } from '@/components/room-organize
 
 export interface MoveCommand { id:number; target:Vec2; item?:FurnitureItem; person?:string }
 export interface WorldProps { storyScene?:DirectedScene|null; family?:FamilyState; minute?:number; activity?:string; sceneReview?:boolean; socialName?:string; onPerson?:(name:string)=>void }
+export interface WorldProps { controlled?:boolean; onPossess?:()=>void }
 export interface WorldProps { home:RoomLayout; stage:number; command:MoveCommand|null; paused:boolean; danger:boolean; movement:string; sprint:boolean; repel:number; onThreatState:(state:{phase:string;seconds:number})=>void; onManual:()=>void; onHurt:(amount:number)=>void; onProwlerCatch?:()=>void; onThreat:(message:string)=>void; onSelect:(item:FurnitureItem)=>void; onWalk:(point:Vec2)=>void; onArrive:(id:number,success:boolean)=>void; onError:(message:string)=>void }
 export function World(props:WorldProps):JSX.Element {
   const [fallback,setFallback]=useState(false);
@@ -64,6 +65,8 @@ export function World(props:WorldProps):JSX.Element {
     for(const item of floor.items){if(!item.position)continue;const model=createFurnitureModel(THREE,item,false);detailFurniture(model,item);model.position.set(item.position.x,0,item.position.z);model.rotation.y=item.rotation??0;model.traverse(o=>{o.userData.lifeItem=item.id;});scene.add(model);interactables.push(model);}
     const person=(id:string,color:string)=>{const m=createCharacter(id,color);scene.add(m);return m;};
     const avatar=createCharacter('You',look.current);scene.add(avatar);const spawn=findPath({x:0,z:1},{x:0,z:1},floor,props.home.width,props.home.height)?.[0]??{x:0,z:0};avatar.position.set(spawn.x,0,spawn.z);
+    // Tag the avatar so a tap on your own character can take (or release) control.
+    avatar.traverse(o=>{o.userData.avatarHit=true;});
     // Swap in a player-uploaded model, if any, keeping the procedural avatar as
     // the transform root so all movement/camera code is unchanged.
     let disposed=false,customRig:LoadedRig|null=null;
@@ -92,6 +95,9 @@ export function World(props:WorldProps):JSX.Element {
     let interactionItem:FurnitureItem|undefined;
     let previousLook='';
     let npcPaths:Vec2[][]=[[],[]],nextWander=0;
+    // When you are not driving your character, it lives on its own like the rest
+    // of the family — wandering the house between the moments you step in for.
+    let avatarPath:Vec2[]=[],avatarWanderAt=0;
     let familyScene:FamilyScene|null=null;
     let previousCaption='';
     function move(mesh:THREE.Group,points:Vec2[],step:number):boolean {const p=points[0];if(!p)return false;const dx=p.x-mesh.position.x,dz=p.z-mesh.position.z,d=Math.hypot(dx,dz);if(d<=step){mesh.position.x=p.x;mesh.position.z=p.z;points.shift();}else{mesh.position.x+=dx/d*step;mesh.position.z+=dz/d*step;mesh.rotation.y=Math.atan2(dx,dz);}return true;}
@@ -113,21 +119,29 @@ export function World(props:WorldProps):JSX.Element {
       });
       if(p.command&&p.command.id!==lastCommand){interactionItem=p.command.item;lastCommand=p.command.id;const from={x:avatar.position.x,z:avatar.position.z};const result=conversation?conversationPath(from,conversation.position,floor,p.home.width,p.home.height):p.command.person?null:findPath(from,p.command.target,floor,p.home.width,p.home.height,p.command.item);path=result??[];if(!result)p.onArrive(lastCommand,false);}
       if(!p.paused){
-        const held=(k:string)=>keys.has(k)||p.movement===k;
+        // canDrive: you have taken control of your character (never in infancy).
+        const canDrive=!!p.controlled;const sprinting=canDrive&&(keys.has('shift')||p.sprint);
+        const held=(k:string)=>canDrive&&(keys.has(k)||p.movement===k);
         const horizontal=Number(held('d'))-Number(held('a')),vertical=Number(held('s'))-Number(held('w'));
         let moving=false;
-        if(horizontal||vertical){path=[];p.onManual();const forward=new THREE.Vector3();camera.getWorldDirection(forward);forward.y=0;forward.normalize();const right=new THREE.Vector3(-forward.z,0,forward.x);const delta=right.multiplyScalar(horizontal).add(forward.multiplyScalar(-vertical)).normalize().multiplyScalar(dt*(keys.has('shift')||p.sprint?3.8:2.4));
+        if(canDrive&&(horizontal||vertical)){path=[];p.onManual();const forward=new THREE.Vector3();camera.getWorldDirection(forward);forward.y=0;forward.normalize();const right=new THREE.Vector3(-forward.z,0,forward.x);const delta=right.multiplyScalar(horizontal).add(forward.multiplyScalar(-vertical)).normalize().multiplyScalar(dt*(sprinting?3.8:2.4));
           const nextX={x:avatar.position.x+delta.x,z:avatar.position.z};if(!blocked(nextX,floor,p.home.width,p.home.height))avatar.position.x=nextX.x;
           const nextZ={x:avatar.position.x,z:avatar.position.z+delta.z};if(!blocked(nextZ,floor,p.home.width,p.home.height))avatar.position.z=nextZ.z;
           avatar.rotation.y=Math.atan2(delta.x,delta.z);moving=true;
-        }else{moving=move(avatar,path,dt*2.4);if(moving&&!path.length)p.onArrive(lastCommand,true);}
+        }else if(canDrive){moving=move(avatar,path,dt*2.4);if(moving&&!path.length)p.onArrive(lastCommand,true);}
+        else{
+          // Autonomous: your character wanders the house on its own. A baby stays
+          // put — it is carried and cared for, not roaming.
+          path=[];
+          if(p.stage>0){if(now>avatarWanderAt){avatarWanderAt=now+8000+Math.random()*6000;avatarPath=findPath({x:avatar.position.x,z:avatar.position.z},{x:(Math.random()-.5)*p.home.width*.7,z:(Math.random()-.5)*p.home.height*.7},floor,p.home.width,p.home.height)??[];}moving=move(avatar,avatarPath,dt*.55);}
+        }
         phase+=dt;
         if(avatar.userData.custom){customRig?.setMoving(moving);customRig?.update(dt);}
-        else{animateCharacter(avatar,phase,moving,keys.has('shift')||p.sprint,p.activity);poseAtFurniture(avatar,moving?'':p.activity??'',interactionItem);}
-        if(p.activity&&!moving&&interactionItem?.position)avatar.rotation.y=Math.atan2(interactionItem.position.x-avatar.position.x,interactionItem.position.z-avatar.position.z);
-        if(conversation&&p.activity==='talk'&&!moving)avatar.rotation.y=Math.atan2(conversation.position.x-avatar.position.x,conversation.position.z-avatar.position.z);
-        if(repel!==p.repel||!p.danger){repel=p.repel;prowler.visible=false;threat='quiet';dangerClock=0;}
-        if(p.danger){dangerClock+=dt;hitCooldown-=dt;
+        else{animateCharacter(avatar,phase,moving,sprinting,canDrive?p.activity:'');poseAtFurniture(avatar,canDrive&&!moving?p.activity??'':'',interactionItem);}
+        if(canDrive&&p.activity&&!moving&&interactionItem?.position)avatar.rotation.y=Math.atan2(interactionItem.position.x-avatar.position.x,interactionItem.position.z-avatar.position.z);
+        if(canDrive&&conversation&&p.activity==='talk'&&!moving)avatar.rotation.y=Math.atan2(conversation.position.x-avatar.position.x,conversation.position.z-avatar.position.z);
+        if(repel!==p.repel||!p.danger||!canDrive){repel=p.repel;prowler.visible=false;threat='quiet';dangerClock=0;}
+        if(p.danger&&canDrive){dangerClock+=dt;hitCooldown-=dt;
           if(threat==='quiet'&&dangerClock>45){threat='warning';p.onThreat('A prowler is approaching. You have 8 seconds. Keep moving; hold Shift to run.');}
           if(threat==='warning'&&dangerClock>53){const target={x:avatar.position.x>0?-p.home.width/2+1:p.home.width/2-1,z:avatar.position.z>0?-p.home.height/2+1:p.home.height/2-1};const route=findPath({x:avatar.position.x,z:avatar.position.z},target,floor,p.home.width,p.home.height);const spawnEnemy=route?.at(-1);if(spawnEnemy&&Math.hypot(spawnEnemy.x-avatar.position.x,spawnEnemy.z-avatar.position.z)>3){prowler.position.set(spawnEnemy.x,0,spawnEnemy.z);prowler.visible=true;attackLeft=24;repath=0;threat='attack';p.onThreat('Prowler! Survive 24 seconds, run away, or use your alarm.');}else{threat='quiet';dangerClock=0;p.onThreat('The prowler could not reach your home.');}}
           if(threat==='attack'){attackLeft-=dt;repath-=dt;if(repath<=0){repath=.8;enemyPath=findPath({x:prowler.position.x,z:prowler.position.z},{x:avatar.position.x,z:avatar.position.z},floor,p.home.width,p.home.height)??[];}move(prowler,enemyPath,dt*1.55);
@@ -180,7 +194,7 @@ export function World(props:WorldProps):JSX.Element {
     const resize=()=>{const w=el.clientWidth,h=el.clientHeight;renderer.setSize(w,h);camera.aspect=w/Math.max(1,h);camera.updateProjectionMatrix();};const observer=new ResizeObserver(resize);observer.observe(el);resize();
     let down={x:0,y:0};const ray=new THREE.Raycaster(),plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
     const start=(e:PointerEvent)=>{down={x:e.clientX,y:e.clientY};};
-    const pick=(e:PointerEvent)=>{if(live.current.paused||Math.hypot(e.clientX-down.x,e.clientY-down.y)>7)return;const rect=renderer.domElement.getBoundingClientRect();ray.setFromCamera(new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),camera);const hit=ray.intersectObjects([...interactables,...companions.filter(m=>m.visible)],true)[0];if(hit){if(hit.object.userData.person){live.current.onPerson?.(hit.object.userData.person);return;}const item=floor.items.find(i=>i.id===hit.object.userData.lifeItem);if(item){live.current.onSelect(item);return;}}
+    const pick=(e:PointerEvent)=>{if(live.current.paused||Math.hypot(e.clientX-down.x,e.clientY-down.y)>7)return;const rect=renderer.domElement.getBoundingClientRect();ray.setFromCamera(new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),camera);const hit=ray.intersectObjects([avatar,...interactables,...companions.filter(m=>m.visible)],true)[0];if(hit){if(hit.object.userData.avatarHit){live.current.onPossess?.();return;}if(hit.object.userData.person){live.current.onPerson?.(hit.object.userData.person);return;}const item=floor.items.find(i=>i.id===hit.object.userData.lifeItem);if(item){live.current.onSelect(item);return;}}
       const target=ray.ray.intersectPlane(plane,new THREE.Vector3());if(target)live.current.onWalk({x:target.x,z:target.z});};
     renderer.domElement.addEventListener('pointerdown',start);renderer.domElement.addEventListener('pointerup',pick);
     const contextLost=(event:Event)=>{event.preventDefault();setGraphicsError('The browser lost the graphics context while the scene was running. Close other graphics-heavy tabs and retry 3D.');setFallback(true);live.current.onError('3D stopped because the browser lost its graphics context.');};

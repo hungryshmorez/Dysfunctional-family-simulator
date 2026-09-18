@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { newLife, stageRequirement } from './engine';
+import { newLife, passTime, stageRequirement } from './engine';
 import { STAGES } from './story';
+
+describe('infancy dependence', () => {
+  it('does not decay a baby’s needs — the family does everything', () => {
+    const baby = passTime(newLife(), 600);
+    expect(baby.needs.hunger).toBe(newLife().needs.hunger);
+    expect(baby.needs.energy).toBe(newLife().needs.energy);
+  });
+
+  it('decays needs once you are old enough to fend for yourself', () => {
+    const child = passTime({ ...newLife(), stage: 1 }, 600);
+    expect(child.needs.hunger).toBeLessThan(newLife().needs.hunger);
+  });
+});
 
 describe('story-gated progression', () => {
   it('blocks advancement until the chapter’s story moments are lived', () => {
