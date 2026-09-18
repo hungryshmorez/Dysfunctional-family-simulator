@@ -114,8 +114,7 @@ export function stageRequirement(s: LifeState):string|null {
   if(s.director.enabled&&s.director.queuedCard)return 'Finish the linked story scene, or pause Story mode before growing older.';
   if(s.director.active)return 'Finish the open family story scene before growing older.';
   if(s.director.enabled&&s.stage>=1&&s.director.chapters[s.stage]!.length<3)return 'Finish this chapter’s three family story scenes, or pause Story mode.';
-  if(s.chapter<(STAGES[s.stage]?.events.length??3)) return 'Finish the three story moments in this chapter.';
-  if(s.stageActions<2)return 'Live a little: complete two household activities in this chapter.';
+  if(s.chapter<(STAGES[s.stage]?.events.length??3)) return 'Live this chapter’s story moments to the end.';
   if(s.stage===3&&!s.job)return 'Find your first job using the computer.';
   if(s.stage===3&&s.shifts<1)return 'Complete your first paid shift.';
   if(s.stage===4&&s.shifts<3)return 'Complete three paid shifts across your life.';
