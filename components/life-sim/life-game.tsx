@@ -81,8 +81,16 @@ export default function LifeGame():JSX.Element {
   useEffect(()=>{
     let s=newLife(),h=loadLayout();
     try{const raw=localStorage.getItem(KEY);if(raw){const parsed=parseLife(JSON.parse(raw));if(parsed)s=parsed;else{localStorage.setItem(KEY+'-recovery',raw);setNotice('An unreadable life save was backed up. A new life has started.');}}const configured=localStorage.getItem('yourspace-website');if(configured&&websiteUrl(configured,location.href))setSite(configured);}catch{setSaveError(true);}
+    let migrated=false;
     if(!h){backupUnreadableLayout();h=starterHome();if(!saveLayout(h))setSaveError(true);}
-    const cost=homeCost(h);if(s.houseCost!==null&&s.stage>=3&&s.houseCost!==cost){const delta=cost-s.houseCost;s=remember({...s,money:s.money-(delta>0?delta:delta*.5)},`Home renovation ${delta>0?'cost':'refund'}: $${Math.round(Math.abs(delta>0?delta:delta*.5))}.`,'home',6);}
+    else if(h.name==='Your first home'){
+      // Upgrade the old single-bedroom starter to the four-bedroom family house.
+      // Only the untouched default (by name) is replaced; a copy is kept.
+      try{localStorage.setItem('yourspace-life-home-prev',JSON.stringify(h));}catch{/* best effort */}
+      h=starterHome();if(!saveLayout(h))setSaveError(true);migrated=true;
+      setNotice('Your home is now the four-bedroom family house. Tap a character to take control.');
+    }
+    const cost=homeCost(h);if(!migrated&&s.houseCost!==null&&s.stage>=3&&s.houseCost!==cost){const delta=cost-s.houseCost;s=remember({...s,money:s.money-(delta>0?delta:delta*.5)},`Home renovation ${delta>0?'cost':'refund'}: $${Math.round(Math.abs(delta>0?delta:delta*.5))}.`,'home',6);}
     s={...s,houseCost:cost};setLife(s);setHome(h);setReady(true);
     try{setDanger(localStorage.getItem('yourspace-danger')!=='off');if(!localStorage.getItem('yourspace-welcome'))setHelp(true);}catch{setSaveError(true);}
     try{if(!localStorage.getItem(KEY+'-checkpoint'))localStorage.setItem(KEY+'-checkpoint',JSON.stringify({life:s,home:h}));}catch{setSaveError(true);}
