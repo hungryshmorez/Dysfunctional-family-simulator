@@ -22,7 +22,7 @@ export function starterHome():RoomLayout {
     // Dining (center).
     ['table',0.5,2,'#c3a47e'],['dining-chair',0.5,3.2,'#a0afa0',Math.PI],['dining-chair',0.5,0.8,'#a0afa0'],
     // Kitchen (east wall).
-    ['fridge',8.3,-0.4],['stove',8.3,0.7],['counter',8.1,1.9,'#c6d0c4'],['kitchen-sink',6.9,-0.5],
+    ['fridge',8.3,-0.4],['stove',8.3,0.7],['counter',8.4,2.13,'#c6d0c4',Math.PI/2],['kitchen-sink',6.9,-0.5],
     // Bathroom (walled, south-east).
     ['shower',8.1,5,'#d7e7e7'],['toilet',5.4,5.4],['bathroom-sink',5.3,3.6],
   ];
