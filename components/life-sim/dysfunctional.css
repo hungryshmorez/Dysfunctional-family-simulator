@@ -327,3 +327,13 @@
 .life-tabs button.active { background: #1a1327 !important; }
 .life-tabs button { border-radius: 4px; }
 .life-app blockquote { background: #17131f; color: #d6cee6; border-left-color: var(--magenta); }
+
+/* Need prompt: the character speaks up when a need runs low */
+.need-alert{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between;padding:11px 16px;background:linear-gradient(90deg,#2a1016,#1a0f18);border-top:1px solid var(--magenta);border-bottom:1px solid #3a2350;color:#ffd7de;font-family:"Courier New",ui-monospace,monospace}
+.need-alert-speech{font-size:14px;line-height:1.4;flex:1;min-width:220px}
+.need-alert-speech b{color:var(--cyan)}
+.need-alert-actions{display:flex;gap:8px;align-items:center}
+.need-alert-do{background:var(--magenta)!important;color:#0b0a12!important;border:0!important;font-weight:800!important;letter-spacing:.5px;padding:9px 16px!important;box-shadow:3px 3px 0 #2ce6dd}
+.need-alert-do:hover:not(:disabled){background:#ff4f9c!important}
+.need-alert-do:disabled{opacity:.5;box-shadow:none}
+.need-alert-dismiss{background:transparent!important;border:1px solid #4a3550!important;color:#9a8fb2!important;min-height:auto!important;padding:7px 10px!important}
