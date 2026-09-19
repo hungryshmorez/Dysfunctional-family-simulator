@@ -267,3 +267,63 @@
 .control-toggle:hover:not(:disabled){background:#2a1422!important;box-shadow:0 0 0 1px #ff2e88,0 0 14px #ff2e8844!important}
 .control-toggle.active{background:#ff2e88!important;color:#0b0a12!important;box-shadow:3px 3px 0 #2ce6dd!important}
 .control-toggle:disabled{opacity:.5}
+
+/* ============================================================
+   UI restructure: finish the dark theme + declutter the scene.
+   The base UI ships a light theme (app/globals.css) that a dark
+   layer only partly overrode; these rules close the gaps and
+   fix the overlapping scene controls. This file loads last.
+   ============================================================ */
+
+/* -- Kill the remaining cream surfaces -- */
+.life-clock { background: #140f1f; border: 1px solid var(--line); }
+.life-stages .current { background: #1a1427; }
+.life-survival strong { background: transparent !important; border: 0 !important; color: #e7e2f2 !important; }
+.life-survival small { color: #9a8fb2 !important; }
+.life-dpad button, .life-dpad .run-toggle { background: #140f1fcc !important; border: 1px solid var(--line) !important; color: #e7e2f2 !important; }
+.life-dpad .run-toggle[aria-pressed="true"] { background: var(--magenta) !important; color: #0b0a12 !important; }
+
+/* Story-mode panel + its controls */
+.story-director { background: var(--panel-2); border: 1px solid var(--line); color: #cfc7de; }
+.story-director .life-objective { color: var(--acid) !important; }
+.director-controls select, .director-dialogue blockquote, .director-ending,
+.workshop-columns select, .family-panel select, .dinner-seats select,
+.life-app select {
+  background: #0b0812; border: 1px solid #322c44; color: #ece7f6;
+}
+.director-dialogue blockquote { border-left: 3px solid #ff2e8855; }
+.director-ending { background: #17131f; border: 1px solid var(--line); }
+
+/* Family panels (People tab) */
+.family-pressure { background: #241a10; border: 1px solid #4a3a1a; color: #e7e2f2; }
+.family-order { background: var(--panel-2); }
+.family-order strong { background: #241d33; color: #fff; }
+.family-panel { border-bottom-color: var(--line); }
+
+/* Fix run-together identity line under the avatar */
+.life-person > div > span { display: block; margin-top: 3px; }
+.life-person > div > small { display: block; }
+
+/* -- Declutter the 3D scene overlays: no more overlap -- */
+/* The WASD hint duplicated the notice and collided with the survival bar. */
+.life-hint, .life-app .life-hint { display: none !important; }
+/* Survival controls become one tidy bar below the title, never overlapping. */
+.life-survival {
+  top: 82px !important; left: 20px !important; right: auto !important;
+  max-width: calc(100% - 40px); display: flex; flex-wrap: wrap; align-items: center;
+  gap: 6px; padding: 6px 8px; background: #120e1cd9; border: 1px solid var(--line);
+  border-radius: 8px; backdrop-filter: blur(8px);
+}
+.life-survival button { min-height: 34px !important; font-size: 10px !important; }
+/* Move the camera toggle out of the crowded top-left to the bottom-right. */
+.world-camera { top: auto !important; bottom: 64px !important; left: auto !important; right: 16px !important; }
+
+@media (max-width: 850px) {
+  .life-survival { top: 74px !important; left: 16px !important; max-width: calc(100% - 32px); }
+  .world-camera { bottom: 60px !important; right: 12px !important; }
+}
+
+/* Active sidebar tab: dark highlight, not the old cream gradient */
+.life-tabs button.active { background: #1a1327 !important; }
+.life-tabs button { border-radius: 4px; }
+.life-app blockquote { background: #17131f; color: #d6cee6; border-left-color: var(--magenta); }
