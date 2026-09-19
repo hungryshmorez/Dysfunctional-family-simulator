@@ -231,7 +231,7 @@
 
 /* ---- Story-beat spotlight: the authored story takes the stage ---- */
 .story-beat-backdrop{position:fixed;inset:0;z-index:150;display:grid;place-items:center;padding:22px;background:#05040acc;backdrop-filter:blur(6px)}
-.story-beat{position:relative;width:min(620px,96vw);background:radial-gradient(130% 100% at 50% 0%,#1b1330,#0b0812 72%);border:1px solid #3a2350;border-radius:6px;box-shadow:0 0 0 1px #ff2e8833,0 30px 90px #000a;padding:30px 30px 24px;color:#ece7f6;font-family:"Courier New",ui-monospace,monospace}
+.story-beat{position:relative;width:min(620px,96vw);max-height:calc(100vh - 44px);max-height:calc(100dvh - 44px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:radial-gradient(130% 100% at 50% 0%,#1b1330,#0b0812 72%);border:1px solid #3a2350;border-radius:6px;box-shadow:0 0 0 1px #ff2e8833,0 30px 90px #000a;padding:30px 30px 24px;color:#ece7f6;font-family:"Courier New",ui-monospace,monospace}
 .story-beat-eyebrow{font-size:11px;letter-spacing:3px;color:#ffe14d;margin:0 0 12px}
 .story-beat h2{font-size:27px;line-height:1.12;text-transform:uppercase;letter-spacing:-.5px;margin:0 0 14px;text-shadow:1.5px 0 #2ce6dd,-1.5px 0 #ff2e88}
 .story-beat-body{font-size:16px;line-height:1.7;color:#ccc3dd;margin:0 0 22px}
