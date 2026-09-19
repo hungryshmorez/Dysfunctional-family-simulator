@@ -56,4 +56,12 @@ describe('the family home', () => {
   it('still totals a positive furnished cost', () => {
     expect(homeCost(home)).toBeGreaterThan(0);
   });
+
+  it('is named the family house, distinct from the old starter it replaces', () => {
+    // life-game migrates a saved home named 'Your first home' (the old
+    // single-bedroom starter) to this one; the new name must differ so the
+    // migration runs once and never loops.
+    expect(home.name).toBe('The family home');
+    expect(home.name).not.toBe('Your first home');
+  });
 });
