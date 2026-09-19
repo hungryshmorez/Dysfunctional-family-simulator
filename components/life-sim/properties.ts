@@ -50,7 +50,7 @@ export function editBlueprint(id:string):void {
 }
 export function contractErrors(layout:RoomLayout):string[] {
   const errors:string[]=[];const floor=layout.floors[0];if(!floor)return ['Add a ground floor.'];
-  if(layout.width*layout.height>120)errors.push('Keep the footprint at 120 m² or less.');
+  if(layout.width*layout.height>240)errors.push('Keep the footprint at 240 m² or less.');
   if(homeCost(layout)>8000)errors.push('Keep furnishings within the $8,000 client budget.');
   for(const type of ['bed','fridge','shower','computer']){const items=floor.items.filter(i=>i.type===type&&i.position);if(!items.length)errors.push(`Place a ${type} on the ground floor.`);else if(!items.some(i=>findPath({x:0,z:0},i.position!,floor,layout.width,layout.height,i)))errors.push(`Leave a clear path to the ${type}.`);}
   return errors;
