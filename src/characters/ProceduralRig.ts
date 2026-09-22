@@ -1,77 +1,105 @@
 import * as THREE from 'three';
 import type { CharacterRig } from './CharacterRig';
-
-export interface ProceduralRigOptions {
-  /** Overall scale — children are smaller than adults. */
-  scale?: number;
-  /** Base clothing color. */
-  color?: number;
-  /** Skin tone. */
-  skin?: number;
-}
+import { makeAppearance, type Appearance } from './appearance';
+import { buildHead } from './parts';
 
 /**
- * A little humanoid assembled from primitives, with a hip/limb bob driven by
- * locomotion speed. No downloaded assets — everything is generated in code.
+ * A humanoid assembled from interchangeable parts described by an Appearance,
+ * with a hip/limb bob driven by locomotion speed. Rebuildable in place so the
+ * character creator can swap parts live. No downloaded assets.
  */
 export class ProceduralRig implements CharacterRig {
   readonly object = new THREE.Group();
-  readonly height: number;
+  height = 1.15;
 
-  private readonly torsoMat: THREE.MeshStandardMaterial;
-  private readonly leftArm: THREE.Object3D;
-  private readonly rightArm: THREE.Object3D;
-  private readonly leftLeg: THREE.Object3D;
-  private readonly rightLeg: THREE.Object3D;
-  private readonly body: THREE.Group;
-  private readonly baseColor: THREE.Color;
+  private appearance: Appearance;
+  private readonly body = new THREE.Group();
+  private torsoMat!: THREE.MeshStandardMaterial;
+  private baseColor = new THREE.Color();
+  private leftArm!: THREE.Object3D;
+  private rightArm!: THREE.Object3D;
+  private leftLeg!: THREE.Object3D;
+  private rightLeg!: THREE.Object3D;
   private phase = Math.random() * Math.PI * 2;
 
-  constructor(opts: ProceduralRigOptions = {}) {
-    const scale = opts.scale ?? 1;
-    this.baseColor = new THREE.Color(opts.color ?? 0x8a7bd8);
+  constructor(appearance: Partial<Appearance> = {}) {
+    this.appearance = makeAppearance(appearance);
+    this.object.add(this.body);
+    this.build();
+  }
+
+  /** Swap to a new look, reusing the same scene object. */
+  setAppearance(appearance: Appearance): void {
+    this.appearance = appearance;
+    this.clearBody();
+    this.build();
+  }
+
+  getAppearance(): Appearance {
+    return { ...this.appearance };
+  }
+
+  private build(): void {
+    const app = this.appearance;
+    const child = app.bodyType === 'child';
+
+    this.baseColor = new THREE.Color(app.topColor);
     this.torsoMat = new THREE.MeshStandardMaterial({
       color: this.baseColor.clone(),
       roughness: 0.6,
     });
     const skinMat = new THREE.MeshStandardMaterial({
-      color: opts.skin ?? 0xdca87e,
+      color: app.skin,
+      roughness: 0.7,
+    });
+    const legMat = new THREE.MeshStandardMaterial({
+      color: app.bottomColor,
       roughness: 0.7,
     });
 
-    this.body = new THREE.Group();
-
+    const girth = 0.16 * app.build * (child ? 0.85 : 1);
+    const torsoLen = child ? 0.24 : 0.34;
     const torso = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.16, 0.34, 4, 8),
+      new THREE.CapsuleGeometry(girth, torsoLen, 4, 10),
       this.torsoMat
     );
-    torso.position.y = 0.62;
+    const torsoY = child ? 0.46 : 0.62;
+    torso.position.y = torsoY;
     torso.castShadow = true;
     this.body.add(torso);
 
-    const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.15, 16, 12),
-      skinMat
-    );
-    head.position.y = 1.0;
-    head.castShadow = true;
-    this.body.add(head);
+    const head = buildHead(app, skinMat);
+    const headY = child ? 0.78 : 1.0;
+    head.group.position.y = headY;
+    this.body.add(head.group);
 
-    this.leftArm = makeLimb(0.055, 0.34, this.torsoMat);
-    this.leftArm.position.set(-0.21, 0.78, 0);
-    this.rightArm = makeLimb(0.055, 0.34, this.torsoMat);
-    this.rightArm.position.set(0.21, 0.78, 0);
+    const armLen = child ? 0.26 : 0.34;
+    const armY = child ? 0.6 : 0.78;
+    this.leftArm = makeLimb(0.05, armLen, this.torsoMat);
+    this.leftArm.position.set(-(girth + 0.05), armY, 0);
+    this.rightArm = makeLimb(0.05, armLen, this.torsoMat);
+    this.rightArm.position.set(girth + 0.05, armY, 0);
     this.body.add(this.leftArm, this.rightArm);
 
-    this.leftLeg = makeLimb(0.07, 0.4, skinMat);
-    this.leftLeg.position.set(-0.09, 0.42, 0);
-    this.rightLeg = makeLimb(0.07, 0.4, skinMat);
-    this.rightLeg.position.set(0.09, 0.42, 0);
+    const legLen = child ? 0.3 : 0.4;
+    const legY = child ? 0.32 : 0.42;
+    this.leftLeg = makeLimb(0.07, legLen, legMat);
+    this.leftLeg.position.set(-0.09, legY, 0);
+    this.rightLeg = makeLimb(0.07, legLen, legMat);
+    this.rightLeg.position.set(0.09, legY, 0);
     this.body.add(this.leftLeg, this.rightLeg);
 
-    this.body.scale.setScalar(scale);
-    this.object.add(this.body);
-    this.height = 1.15 * scale;
+    this.body.scale.setScalar(app.height);
+    this.height = (child ? 0.95 : 1.15) * app.height;
+  }
+
+  private clearBody(): void {
+    for (const child of [...this.body.children]) {
+      this.body.remove(child);
+      disposeObject(child);
+    }
+    this.body.position.set(0, 0, 0);
+    this.body.rotation.set(0, 0, 0);
   }
 
   update(dt: number, speed: number): void {
@@ -81,31 +109,19 @@ export class ProceduralRig implements CharacterRig {
     this.rightLeg.rotation.x = -swing;
     this.leftArm.rotation.x = -swing * 0.8;
     this.rightArm.rotation.x = swing * 0.8;
-    // Subtle vertical bob while walking.
     this.body.position.y = Math.abs(Math.sin(this.phase)) * 0.04 * speed;
   }
 
   setMood(valence: number): void {
-    // Miserable -> desaturated + slumped; content -> saturated + upright.
-    const t = (valence + 1) / 2; // 0..1
+    const t = (valence + 1) / 2;
     const hsl = { h: 0, s: 0, l: 0 };
     this.baseColor.getHSL(hsl);
     this.torsoMat.color.setHSL(hsl.h, hsl.s * (0.35 + 0.65 * t), hsl.l);
-    this.body.rotation.x = (1 - t) * 0.18; // slump when low
+    this.body.rotation.x = (1 - t) * 0.18;
   }
 
   dispose(): void {
-    this.object.traverse((obj) => {
-      if (obj instanceof THREE.Mesh) {
-        obj.geometry.dispose();
-        const mat = obj.material;
-        if (Array.isArray(mat)) {
-          mat.forEach((m) => m.dispose());
-        } else {
-          mat.dispose();
-        }
-      }
-    });
+    disposeObject(this.object);
   }
 }
 
@@ -123,4 +139,18 @@ function makeLimb(
   mesh.castShadow = true;
   pivot.add(mesh);
   return pivot;
+}
+
+function disposeObject(root: THREE.Object3D): void {
+  root.traverse((obj) => {
+    if (obj instanceof THREE.Mesh) {
+      obj.geometry.dispose();
+      const mat = obj.material;
+      if (Array.isArray(mat)) {
+        mat.forEach((m) => m.dispose());
+      } else {
+        mat.dispose();
+      }
+    }
+  });
 }

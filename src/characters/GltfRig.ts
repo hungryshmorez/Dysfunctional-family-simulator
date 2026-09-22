@@ -34,8 +34,8 @@ export class GltfRig implements CharacterRig {
   constructor(opts: GltfRigOptions) {
     // Start with the procedural fallback visible immediately.
     this.fallback = new ProceduralRig({
-      scale: opts.scale ?? 1,
-      color: opts.placeholderColor ?? 0x8a7bd8,
+      height: opts.scale ?? 1,
+      topColor: opts.placeholderColor ?? 0x8a7bd8,
     });
     this.height = this.fallback.height;
     this.object.add(this.fallback.object);

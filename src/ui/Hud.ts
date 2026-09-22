@@ -16,7 +16,7 @@ export class Hud {
   private selected: Character | null = null;
   private readonly projected = new THREE.Vector3();
 
-  constructor(root: HTMLElement) {
+  constructor(root: HTMLElement, onCreate: () => void) {
     this.root = root;
     this.root.innerHTML = `
       <div class="hud-title">Dysfunctional Family Simulator
@@ -24,6 +24,13 @@ export class Hud {
       </div>
       <div class="hint">Drag to orbit · scroll to zoom</div>
     `;
+
+    const createBtn = document.createElement('button');
+    createBtn.className = 'create-btn';
+    createBtn.textContent = '＋ Create a character';
+    createBtn.addEventListener('click', onCreate);
+    this.root.appendChild(createBtn);
+
     this.panel = document.createElement('div');
     this.panel.className = 'panel';
     this.panel.style.display = 'none';
