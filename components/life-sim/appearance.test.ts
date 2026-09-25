@@ -28,6 +28,13 @@ describe('parseAppearance', () => {
     const full = { skin: '#010203', hair: '#040506', shirt: '#070809', bottoms: '#0a0b0c', shoes: '#0d0e0f', hairStyle: 'long', accessory: 'glasses', build: 1.1 };
     expect(parseAppearance(full)).toEqual(full);
   });
+
+  it('accepts the extended hair styles and beard accessory', () => {
+    for (const hairStyle of ['buzz', 'curly', 'ponytail', 'bun'] as const) {
+      expect(parseAppearance({ ...DEFAULT_APPEARANCE, hairStyle })!.hairStyle).toBe(hairStyle);
+    }
+    expect(parseAppearance({ ...DEFAULT_APPEARANCE, accessory: 'beard' })!.accessory).toBe('beard');
+  });
 });
 
 describe('structuralKey', () => {

@@ -38,8 +38,11 @@ export function createCharacter(name: string, look: string | Appearance): THREE.
   const face=(material:THREE.Material,x:number,y:number,z:number,sx:number,sy:number,sz:number)=>ellipsoid(head,material,x,y-1.43,z,sx,sy,sz);
   face(skin,0,1.43,0,.075,.10,.075);
   face(skin,0,1.61,0,.15,.195,.14);
-  if(hairStyle!=='bald')face(hair,0,1.72,-.025,.155,.10,.145);
+  if(hairStyle!=='bald')face(hair,0,hairStyle==='buzz'?1.70:1.72,-.025,.155,hairStyle==='buzz'?.06:.10,.145);
   if(hairStyle==='long')face(hair,0,1.57,-.105,.155,.19,.075);
+  if(hairStyle==='curly')for(const [dx,dz] of [[-.12,0],[.12,0],[0,-.12],[-.09,-.09],[.09,-.09]] as const)face(hair,dx,1.74,dz-.02,.07,.07,.07);
+  if(hairStyle==='ponytail')face(hair,0,1.55,-.16,.06,.13,.06);
+  if(hairStyle==='bun')face(hair,0,1.79,-.11,.075,.075,.075);
   const eye = new THREE.MeshStandardMaterial({color:'#394e50',roughness:.3});
   const white = new THREE.MeshStandardMaterial({color:'#fffaf0'});
   const lip = new THREE.MeshStandardMaterial({color:'#9b5e55',roughness:.85});
@@ -74,6 +77,10 @@ export function createCharacter(name: string, look: string | Appearance): THREE.
     const capMat=new THREE.MeshStandardMaterial({color:'#20222c',roughness:.8});
     face(capMat,0,1.75,-.02,.168,.095,.16);
     face(capMat,0,1.715,.115,.15,.022,.13);
+  } else if(accessory==='beard'){
+    // Jaw-line beard in the hair colour, parented to the head so it tracks.
+    face(hair,0,1.52,.085,.11,.075,.085);
+    face(hair,0,1.48,.055,.075,.055,.07);
   }
   // Cache the articulated joints; avoid scene-graph searches every frame.
   root.userData.joints=Object.fromEntries(['leftArm','rightArm','leftLeg','rightLeg','leftKnee','rightKnee','leftElbow','rightElbow'].map(key=>[key,root.getObjectByName(key)]));

@@ -6,8 +6,8 @@ import { MAX_TRAITS, TRAITS } from './traits';
 const SKIN = ['#f2d3b3', '#d6a27d', '#a9714b', '#7a4b31', '#ffe0c0', '#4a2f20'];
 const HAIR = ['#1a1a1a', '#352b2b', '#6b4a2f', '#b5892f', '#8a8a8a', '#c04a2a'];
 const TOP = ['#d8a14c', '#ff2e88', '#2ce6dd', '#6b7cff', '#4caf7a', '#b0473f'];
-const HAIR_STYLES: readonly HairStyle[] = ['bald', 'short', 'long'];
-const ACCESSORIES: readonly Accessory[] = ['none', 'glasses', 'cap'];
+const HAIR_STYLES: readonly HairStyle[] = ['bald', 'buzz', 'short', 'long', 'curly', 'ponytail', 'bun'];
+const ACCESSORIES: readonly Accessory[] = ['none', 'glasses', 'cap', 'beard'];
 
 export interface CreationResult { name: string; gender: 'boy' | 'girl' | null; appearance: Appearance; traits: string[] }
 

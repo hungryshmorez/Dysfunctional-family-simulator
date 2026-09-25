@@ -1,6 +1,18 @@
 import * as THREE from 'three';
 import { describe,expect,it } from 'vitest';
+import { DEFAULT_APPEARANCE } from './appearance';
 import { animateCharacter,createCharacter,poseAtFurniture } from './character';
+
+describe('appearance parts',()=>{
+  it('builds every hair style and accessory without error',()=>{
+    for(const hairStyle of ['bald','buzz','short','long','curly','ponytail','bun'] as const)
+      for(const accessory of ['none','glasses','cap','beard'] as const){
+        const person=createCharacter('You',{...DEFAULT_APPEARANCE,hairStyle,accessory});
+        expect(person).toBeInstanceOf(THREE.Group);
+        expect(person.userData.head).toBeInstanceOf(THREE.Group);
+      }
+  });
+});
 
 describe('furniture activity poses',()=>{
   it('aligns sleep with a rotated bed without moving the navigation root',()=>{
