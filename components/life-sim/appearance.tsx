@@ -1,6 +1,6 @@
 'use client';
-export type HairStyle = 'bald' | 'short' | 'long';
-export type Accessory = 'none' | 'glasses' | 'cap';
+export type HairStyle = 'bald' | 'buzz' | 'short' | 'long' | 'curly' | 'ponytail' | 'bun';
+export type Accessory = 'none' | 'glasses' | 'cap' | 'beard';
 export interface Appearance {
   skin: string; hair: string; shirt: string; bottoms: string; shoes: string;
   hairStyle: HairStyle; accessory: Accessory; build: number;
@@ -10,8 +10,8 @@ export const DEFAULT_APPEARANCE: Appearance = {
   hairStyle: 'short', accessory: 'none', build: 1,
 };
 
-const HAIR_STYLES: readonly HairStyle[] = ['bald', 'short', 'long'];
-const ACCESSORIES: readonly Accessory[] = ['none', 'glasses', 'cap'];
+const HAIR_STYLES: readonly HairStyle[] = ['bald', 'buzz', 'short', 'long', 'curly', 'ponytail', 'bun'];
+const ACCESSORIES: readonly Accessory[] = ['none', 'glasses', 'cap', 'beard'];
 
 /** Tolerant parse: unknown/invalid fields fall back to the default, so old
  *  three-colour saves migrate cleanly. Only a non-object is rejected. */
@@ -45,12 +45,12 @@ export function AppearancePanel({ value, onChange, onClose, onUploadRig, onClear
       ))}
       <label>Hair style
         <select aria-label="Hair style" value={value.hairStyle} onChange={(e) => onChange({ ...value, hairStyle: e.target.value as HairStyle })}>
-          <option value="bald">Shaved</option><option value="short">Short</option><option value="long">Long</option>
+          <option value="bald">Shaved</option><option value="buzz">Buzz</option><option value="short">Short</option><option value="long">Long</option><option value="curly">Curly</option><option value="ponytail">Ponytail</option><option value="bun">Bun</option>
         </select>
       </label>
       <label>Accessory
         <select aria-label="Accessory" value={value.accessory} onChange={(e) => onChange({ ...value, accessory: e.target.value as Accessory })}>
-          <option value="none">None</option><option value="glasses">Glasses</option><option value="cap">Cap</option>
+          <option value="none">None</option><option value="glasses">Glasses</option><option value="cap">Cap</option><option value="beard">Beard</option>
         </select>
       </label>
       <label>Build
