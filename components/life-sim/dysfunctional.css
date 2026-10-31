@@ -394,3 +394,22 @@
 .park-pad .pad-run{grid-column:3;grid-row:1;font-size:11px}
 .park-pad .pad-run[aria-pressed=true]{background:#ff2e88;color:#0b0a12}
 @media(max-width:600px){.park-head strong{font-size:15px}.park-cam{top:54px;right:12px}}
+
+/* ===== Launcher (/) ===== */
+.launcher{position:fixed;inset:0;overflow:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;padding:48px 20px;background:radial-gradient(120% 90% at 50% -10%,#241a2e 0%,#17131c 55%,#0f0c13 100%);color:#e7e2f2;font-family:"Courier New",ui-monospace,monospace}
+.launcher-head{text-align:center;max-width:620px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.launcher-mark{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:12px;background:#ff2e88;color:#0b0a12;font-weight:900;font-size:22px;letter-spacing:1px;box-shadow:4px 4px 0 #2ce6dd}
+.launcher-head h1{margin:0;font-size:34px;letter-spacing:1px;color:#fff;text-shadow:2px 0 #2ce6dd,-2px 0 #ff2e88}
+.launcher-head p{margin:0;font-size:14px;line-height:1.5;color:#b7aecb}
+.launcher-grid{display:grid;grid-template-columns:repeat(2,minmax(260px,340px));gap:22px;width:100%;max-width:720px}
+.launcher-card{display:flex;flex-direction:column;gap:10px;padding:26px 24px;border-radius:14px;text-decoration:none;color:#e7e2f2;border:1px solid #352c47;background:#1a1522cc;transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease}
+.launcher-card:hover{transform:translateY(-4px);border-color:#2ce6dd;box-shadow:0 14px 34px #0009}
+.launcher-card.family:hover{border-color:#ffe14d}
+.launcher-card.park:hover{border-color:#2ce6dd}
+.launcher-eyebrow{font-size:10px;letter-spacing:2px;color:#ffe14d}
+.launcher-card strong{font-size:19px;line-height:1.2;color:#fff}
+.launcher-desc{font-size:13px;line-height:1.5;color:#b7aecb;flex:1}
+.launcher-go{font-size:13px;font-weight:700;letter-spacing:.5px;color:#2ce6dd}
+.launcher-card.family .launcher-go{color:#ffe14d}
+.launcher-foot{font-size:10px;letter-spacing:3px;color:#6a6080}
+@media(max-width:620px){.launcher-grid{grid-template-columns:1fr;max-width:360px}.launcher-head h1{font-size:26px}}

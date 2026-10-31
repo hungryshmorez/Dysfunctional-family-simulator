@@ -66,5 +66,5 @@ const RoomOrganizer = dynamic(
 );
 
 export default function Page(): JSX.Element {
-  return <><RoomOrganizer /><Link href="/" style={{position:"fixed",right:16,bottom:16,zIndex:1000,background:"#101d35",color:"white",padding:"14px 20px",borderRadius:12,fontSize:16}}>Return to your life →</Link></>;
+  return <><RoomOrganizer /><Link href="/family" style={{position:"fixed",right:16,bottom:16,zIndex:1000,background:"#101d35",color:"white",padding:"14px 20px",borderRadius:12,fontSize:16}}>Return to your life →</Link></>;
 }
