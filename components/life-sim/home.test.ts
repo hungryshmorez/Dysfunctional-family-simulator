@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { homeCost, starterHome } from './home';
+import { FRONT_DOOR, homeCost, starterHome, TRAILER_NAME } from './home';
 import { blocked, findPath } from './navigation';
 import type { FurnitureItem } from '@/components/room-organizer/lib/types';
 
 const home = starterHome();
 const floor = home.floors[0]!;
 const beds = floor.items.filter((i) => i.type === 'bed');
+// Doors and windows sit on the wall planes; they cut openings, never block.
+const openings = floor.items.filter((i) => i.type === 'door' || i.type === 'window');
 
 // A generous half-extent for overlap checks (mirrors navigation's collision box
 // without the path radius, so touching-at-the-wall placements aren't flagged).
@@ -18,14 +20,14 @@ describe('the family home', () => {
 
   it('keeps every solid item inside the walls', () => {
     for (const i of floor.items) {
-      if (!i.position) continue;
+      if (!i.position || openings.includes(i)) continue;
       expect(Math.abs(i.position.x) + half(i, i.rotation ? 'd' : 'w')).toBeLessThanOrEqual(home.width / 2 + 0.01);
       expect(Math.abs(i.position.z) + half(i, i.rotation ? 'w' : 'd')).toBeLessThanOrEqual(home.height / 2 + 0.01);
     }
   });
 
   it('never overlaps two solid, axis-aligned items', () => {
-    const solid = floor.items.filter((i) => i.position && !['rug', 'plant', 'floor-lamp'].includes(i.type) && !(i.rotation && i.rotation % (Math.PI / 2) !== 0));
+    const solid = floor.items.filter((i) => i.position && !openings.includes(i) && !['rug', 'plant', 'floor-lamp'].includes(i.type) && !(i.rotation && i.rotation % (Math.PI / 2) !== 0));
     for (let a = 0; a < solid.length; a++) {
       for (let b = a + 1; b < solid.length; b++) {
         const p = solid[a]!, q = solid[b]!;
@@ -57,11 +59,37 @@ describe('the family home', () => {
     expect(homeCost(home)).toBeGreaterThan(0);
   });
 
-  it('is named the family house, distinct from the old starter it replaces', () => {
+  it('is a trailer named for migration, distinct from the starters it replaces', () => {
     // life-game migrates a saved home named 'Your first home' (the old
-    // single-bedroom starter) to this one; the new name must differ so the
-    // migration runs once and never loops.
-    expect(home.name).toBe('The family home');
-    expect(home.name).not.toBe('Your first home');
+    // single-bedroom starter) or 'The family home' (the old boxy house) to this
+    // one; the new name must differ so the migration runs once and never loops.
+    expect(home.name).toBe(TRAILER_NAME);
+    expect(['Your first home', 'The family home']).not.toContain(home.name);
+  });
+
+  it('is a double-wide: long and narrow, with the long axis running east to west', () => {
+    expect(home.width).toBeGreaterThan(home.height * 1.5);
+    expect(home.height).toBeLessThanOrEqual(10);
+  });
+
+  it('has a front door on the west wall, the end that faces the street', () => {
+    const doors = floor.items.filter((i) => i.type === 'door');
+    expect(doors.length).toBe(1);
+    expect(doors[0]!.position!.x).toBe(-home.width / 2);
+    expect(doors[0]!.position!.x).toBe(FRONT_DOOR.x);
+    expect(doors[0]!.position!.z).toBe(FRONT_DOOR.z);
+    expect(doors[0]!.width).toBe(FRONT_DOOR.width);
+  });
+
+  it('keeps the way to the front door clear from the living room', () => {
+    const inside = { x: FRONT_DOOR.x + 0.6, z: FRONT_DOOR.z };
+    expect(blocked(inside, floor, home.width, home.height)).toBe(false);
+    const path = findPath({ x: -6, z: 0 }, inside, floor, home.width, home.height);
+    expect(path).not.toBeNull();
+  });
+
+  it('keeps windows clear of the front door so the openings never merge', () => {
+    const windows = floor.items.filter((i) => i.type === 'window' && i.position!.x === -home.width / 2);
+    for (const w of windows) expect(Math.abs(w.position!.z - FRONT_DOOR.z)).toBeGreaterThan(FRONT_DOOR.width / 2 + w.width / 2);
   });
 });
