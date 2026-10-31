@@ -38,6 +38,9 @@ export function ParkWorld(): JSX.Element {
 
   useEffect(() => {
     if (fallback || !host.current) return;
+    // Satisfy the stale-chunk watchdog in app/layout.tsx so this route isn't
+    // reloaded after 20s (it only sets __pcReady on the family game module).
+    try { (window as unknown as { __pcReady: boolean }).__pcReady = true; } catch { /* noop */ }
     const el = host.current;
     let renderer: THREE.WebGLRenderer; let reducedQuality = false;
     try { const g = startGraphics(); renderer = g.renderer; reducedQuality = g.reducedQuality; }
@@ -274,7 +277,7 @@ export function ParkWorld(): JSX.Element {
         : <div className="park-scene" ref={host} aria-label="Trailer park. Drag to look, WASD or the pad to walk." />}
       <header className="park-head">
         <div><strong>TRAILER PARK</strong><small>PASS DOWN YOUR PROBLEMS · LOT 3</small></div>
-        <Link className="park-exit" href="/">↩ Family game</Link>
+        <Link className="park-exit" href="/">↩ Menu</Link>
       </header>
       <button className="park-cam" onClick={() => setMode((m) => (m === 'fp' ? 'tp' : 'fp'))}>{mode === 'fp' ? '↳ Overhead view' : '↳ First person'}</button>
       <div className="park-hud">
