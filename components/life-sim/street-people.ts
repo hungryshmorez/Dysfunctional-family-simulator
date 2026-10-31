@@ -8,7 +8,7 @@ import { outdoorBlocked, type Person, type StreetPlan } from './street';
 // the game's own townspeople (Della, Ren, Ozzie, Sim) follow their daily
 // schedules from neighborhood.ts and turn in when it says they are asleep, and
 // the rich stay put on their lawn. Nobody here enters the household economy —
-// they are the world getting on with itself — so tapping them does nothing.
+// they are the world getting on with itself. Tap one to talk (see street-talk.ts).
 
 // Full articulated characters are costly (dozens of meshes each), so only the
 // nearby ones are drawn in full; farther away a simple figure stands in.
@@ -18,6 +18,10 @@ const WALK_SPEED = 0.6;
 
 export interface StreetPeople {
   update(dt: number, phase: number, minute: number, viewer: THREE.Vector3): void;
+  /** Whatever is on screen right now that you could tap to talk to. */
+  pickables(): THREE.Object3D[];
+  /** Where a person is standing, for range checks. */
+  locate(id: string): { x: number; z: number } | null;
 }
 
 interface Entry {
@@ -63,6 +67,7 @@ export function createStreetPeople(scene: THREE.Scene, plan: StreetPlan): Street
     stand.position.copy(mesh.position);
     stand.visible = false;
     scene.add(stand);
+    for (const root of [mesh, stand]) root.traverse((o) => { o.userData.streetPerson = person.id; });
     return {
       person, mesh, stand, label, home: { x: person.x, z: person.z }, target: { x: person.x, z: person.z },
       wait: Math.random() * 4, offset: i * 1.7, def, roam: person.kind === 'rich' ? 1.2 : 1.5, lastDetail: detail,
@@ -70,6 +75,13 @@ export function createStreetPeople(scene: THREE.Scene, plan: StreetPlan): Street
   });
 
   return {
+    pickables() {
+      return entries.flatMap((e) => (e.mesh.visible ? [e.mesh] : e.stand.visible ? [e.stand] : []));
+    },
+    locate(id) {
+      const e = entries.find((x) => x.person.id === id);
+      return e ? { x: e.mesh.position.x, z: e.mesh.position.z } : null;
+    },
     update(dt, phase, minute, viewer) {
       for (const e of entries) {
         const m = e.mesh;
