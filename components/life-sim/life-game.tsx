@@ -1,7 +1,7 @@
 'use client';
 import { Heart, BookOpen, BriefcaseBusiness, Monitor, Pause, Play, Hammer, Sparkles, X, Settings, Users, ArrowRight, Music2, Map, ChevronRight, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { backupUnreadableLayout, loadLayout, saveLayout } from '@/components/room-organizer/lib/persistence';
 import config from '@/config/game.json';
 import { newNonce, validVisit, websiteUrl, type VisitChallenge } from './bridge';
@@ -40,6 +40,9 @@ import { setStoryDirection,startStoryCard } from './story-director';
 import { StoryDirectorPanel } from './story-director-panel';
 import {saveStoryDraft,approveStoryDraft,importStoryCard} from './story-workshop';
 import { StoryWorkshopPanel } from './story-workshop-panel';
+import { frontDoorOf, planStreet } from './street';
+import { resolveTalk, talkScene, talkTarget } from './street-talk';
+import { StreetTalkSpotlight } from './street-talk-spotlight';
 import { applyTraits, traitById } from './traits';
 import { World, type MoveCommand } from './world';
 import type { FurnitureItem, RoomLayout, Vec2 } from '@/components/room-organizer/lib/types';
@@ -60,6 +63,7 @@ export default function LifeGame():JSX.Element {
   const [fight,setFight]=useState<FightSetup|null>(null);
   const [storyOpen,setStoryOpen]=useState(false);
   const [momentOpen,setMomentOpen]=useState(false);
+  const [streetTalk,setStreetTalk]=useState<{id:string;reply:string|null}|null>(null);
   const [consequenceOpen,setConsequenceOpen]=useState(false);
   const [directedOpen,setDirectedOpen]=useState(false);
   const [dinnerOpen,setDinnerOpen]=useState(false);
@@ -81,8 +85,8 @@ export default function LifeGame():JSX.Element {
   const autoBeatRef=useRef('');
   lifeRef.current=life;runningRef.current=running;
   canControlRef.current=!!controlled&&(life?.stage??0)>0&&!life?.completed&&(life?.health??0)>0;
-  const activeDialog=life?.health===0?'death':creation?'creation':fight?'fight':workshop?'workshop':help?'help':music?'music':city?'city':settings?'settings':computer?'computer':'';
-  useGameDialogs(activeDialog,()=>{if(fight)setFight(null);else if(workshop)setWorkshop(false);else if(help)setHelp(false);else if(music)setMusic(false);else if(city)setCity(false);else if(settings)setSettings(false);else if(computer)closeComputer();});
+  const activeDialog=life?.health===0?'death':creation?'creation':fight?'fight':workshop?'workshop':help?'help':music?'music':streetTalk?'street':city?'city':settings?'settings':computer?'computer':'';
+  useGameDialogs(activeDialog,()=>{if(fight)setFight(null);else if(workshop)setWorkshop(false);else if(help)setHelp(false);else if(music)setMusic(false);else if(streetTalk)setStreetTalk(null);else if(city)setCity(false);else if(settings)setSettings(false);else if(computer)closeComputer();});
   useEffect(()=>{const visibility=()=>{setHidden(document.hidden);setMovement('');};const key=(e:KeyboardEvent)=>{if(activeDialog||e.code!=='Space'||(e.target instanceof HTMLElement&&(e.target.isContentEditable||['INPUT','BUTTON','TEXTAREA','SELECT'].includes(e.target.tagName))))return;e.preventDefault();setPaused(p=>!p);};document.addEventListener('visibilitychange',visibility);window.addEventListener('keydown',key);return()=>{document.removeEventListener('visibilitychange',visibility);window.removeEventListener('keydown',key);};},[activeDialog]);
   useEffect(()=>{if(paused||activeDialog||hidden)setMovement('');},[paused,activeDialog,hidden]);
   useEffect(()=>{
@@ -173,6 +177,16 @@ export default function LifeGame():JSX.Element {
     setCreation(false);setControlled(false);setWorldKey(k=>k+1);
     setNotice('Your life begins. You are a baby — your family does everything. Watch them live, and argue.');
   }
+  // The street around the trailer, for talking to the people on it.
+  const street=useMemo(()=>home?planStreet({width:home.width,depth:home.height},frontDoorOf(home)):null,[home]);
+  const households=useMemo(()=>street?street.lots.filter(l=>!l.isPlayer).map(l=>l.household):[],[street]);
+  const talkTo=useCallback((id:string,distance:number)=>{
+    const now=lifeRef.current;if(!street||!now)return;
+    const who=talkTarget(street,id);if(!who)return;
+    if(now.stage===0){setNotice('You are an infant — all you can do is watch the street go by.');return;}
+    if(distance>6){setNotice(canControlRef.current?`Walk over to ${who.name} first.`:`Take control and walk over to ${who.name} first.`);return;}
+    setStreetTalk({id,reply:null});
+  },[street]);
   if(!life||!home)return <main className="life-loading">Opening your life…</main>;
   const stage=STAGES[life.stage]!,event=stage.events[life.chapter],job=JOBS.find(j=>j.id===life.job),requirement=stageRequirement(life);
   const hour=Math.floor(life.minute/60)%24,min=Math.floor(life.minute)%60,day=Math.floor(life.minute/1440)+1;
@@ -198,10 +212,10 @@ export default function LifeGame():JSX.Element {
   return <main className="life-app">
     <header className="life-header"><div className="life-brand"><span className="life-mark">DF</span><div><strong>Dysfunctional Family Simulator</strong><small>PASS DOWN YOUR PROBLEMS</small></div></div><div className="life-clock"><span>DAY {day}</span><strong>{String(hour).padStart(2,'0')}:{String(min).padStart(2,'0')}</strong><button aria-label={paused?'Resume life':'Pause life'} onClick={()=>setPaused(!paused)}>{paused?<Play size={17}/>:<Pause size={17}/>}</button></div><div className="life-wallet"><small>HOUSEHOLD</small><strong>${Math.round(life.money).toLocaleString()}</strong></div><span className="save-indicator" title={savedAt?new Date(savedAt).toLocaleTimeString():'Saving…'}>{saveError?'Save failed':savedAt?'Saved locally':'Saving…'}</span><button className="life-icon" aria-label="How to play" onClick={()=>setHelp(true)}><HelpCircle size={20}/></button><button className="life-icon" aria-label="Creator settings" onClick={()=>setSettings(true)}><Settings size={20}/></button></header>
     <nav className="life-stages" aria-label="Seven stages of life">{STAGES.map((s,i)=><div key={s.name} className={i===life.stage?'current':i<life.stage?'passed':''}><span>{i+1}</span><b>{s.name}</b></div>)}</nav>
-    <section className="life-playarea"><div className="life-scene-wrap"><World key={worldKey} controlled={canControl} onPossess={possess} storyScene={life.director.active} family={life.family} home={home} minute={life.minute} activity={running?.id} socialName={socialTarget.current} onPerson={name=>{if(busy)return;socialTarget.current=name;setTab('people');doAction('talk');}} stage={life.stage} command={command} paused={paused||modal||hidden} sprint={sprint} onThreatState={setThreat} danger={danger&&life.stage>=2&&!life.completed} movement={movement} repel={repel} onManual={()=>{if(busy)cancel();}} onHurt={amount=>{cancel();setLife(s=>s?hurt(s,amount):s);setNotice('Prowler hit! −12 health. Keep moving or sound the alarm.');}} onProwlerCatch={()=>{if(!fight&&life.health>0&&!life.completed){cancel();setFight({opponent:'the prowler',instigatedByPlayer:false});}}} onThreat={setNotice} onSelect={setSelected} onWalk={walk} onArrive={arrive} onError={setNotice}/><div className="life-lot"><span>HOME / GROUND FLOOR</span><strong>{home.name}</strong></div><Link href="/build" className="life-build"><Hammer size={17}/> Build & furnish</Link>
+    <section className="life-playarea"><div className="life-scene-wrap"><World key={worldKey} controlled={canControl} onPossess={possess} storyScene={life.director.active} family={life.family} home={home} minute={life.minute} activity={running?.id} socialName={socialTarget.current} onPerson={name=>{if(busy)return;socialTarget.current=name;setTab('people');doAction('talk');}} stage={life.stage} command={command} paused={paused||modal||hidden} sprint={sprint} onThreatState={setThreat} danger={danger&&life.stage>=2&&!life.completed} movement={movement} repel={repel} onManual={()=>{if(busy)cancel();}} onHurt={amount=>{cancel();setLife(s=>s?hurt(s,amount):s);setNotice('Prowler hit! −12 health. Keep moving or sound the alarm.');}} onProwlerCatch={()=>{if(!fight&&life.health>0&&!life.completed){cancel();setFight({opponent:'the prowler',instigatedByPlayer:false});}}} onThreat={setNotice} onStreetPerson={talkTo} onSelect={setSelected} onWalk={walk} onArrive={arrive} onError={setNotice}/><div className="life-lot"><span>HOME / GROUND FLOOR</span><strong>{home.name}</strong></div><Link href="/build" className="life-build"><Hammer size={17}/> Build & furnish</Link>
       {paused&&<div className="pause-ribbon"><Pause size={14}/> LIFE PAUSED <button onClick={()=>setPaused(false)}>Resume</button></div>}
       {threat.phase!=='quiet'&&<div className={'threat-banner '+threat.phase} role="status"><b>{threat.phase==='warning'?'Someone is approaching':'Prowler on the loose'}</b><span>{threat.seconds}s · {threat.phase==='warning'?'Get ready to move':'Run or sound your alarm'}</span></div>}
-      <div className="life-hint">WASD to walk · Shift to run · Drag to orbit · Scroll to zoom</div>
+      <div className="life-hint">WASD to walk · Shift to run · Drag to orbit · Scroll to zoom · Tap a neighbor to talk</div>
       <div className="life-survival"><button className={canControl?'control-toggle active':'control-toggle'} title={life.stage===0?'A baby is cared for by the family':canControl?'Hand your character back to their own life':'Tap your character to take the wheel'} disabled={life.stage===0||life.completed||life.health<=0} onClick={possess}>{canControl?'Release control':'Take control'}</button><strong><Heart size={14}/> {Math.round(life.health)}<small> HEALTH</small></strong><button disabled={life.alarmDay===day||life.health<=0||!danger||life.stage<2} title={life.alarmDay===day?'Available again tomorrow':'Repel the prowler once per game day'} onClick={()=>{setRepel(r=>r+1);setLife(s=>s?soundAlarm(s):s);setNotice('Alarm sounded. The prowler fled. One alarm is available each game day.');}}>Sound alarm</button><button title="Save a safe return point at full health" disabled={busy||life.health<100||threat.phase!=='quiet'} onClick={checkpoint}>Checkpoint</button>{life.health<100&&<button title={hospitalError(life)??'Pay for treatment'} disabled={busy||!!hospitalError(life)} onClick={()=>{const err=hospitalError(life);if(err){setNotice(err);return;}setLife(s=>s?hospitalVisit(s):s);setNotice('Patched up at the clinic. −$60 and a couple of hours, but health restored.');}}>Get treated · $60</button>}</div>
       {canControl&&<div className="life-dpad" aria-label="Movement controls">{[['w','↑'],['a','←'],['s','↓'],['d','→']].map(([key,label])=><button key={key} aria-label={'Move '+({w:'forward',a:'left',s:'back',d:'right'}[key! as 'w'])} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);setMovement(key!);}} onPointerUp={()=>setMovement('')} onPointerCancel={()=>setMovement('')} onLostPointerCapture={()=>setMovement('')}>{label}</button>)}<button className="run-toggle" aria-pressed={sprint} onClick={()=>setSprint(v=>!v)}>Run</button></div>}
       {selected&&<div className="life-interact"><div><strong>{selected.name}</strong><button aria-label="Close item actions" onClick={()=>setSelected(null)}><X size={17}/></button></div>{selected.type==='computer'&&<button disabled={busy} onClick={()=>doAction('computer',selected)}><Monitor size={16}/> Use computer</button>}{(Object.keys(ACTIVITIES) as Activity[]).filter(a=>ACTIVITIES[a].types.includes(selected.type)&&life.stage>=ACTIVITIES[a].minStage).map(a=><button key={a} disabled={busy} onClick={()=>doAction(a,selected)}>{ACTIVITIES[a].label}</button>)}</div>}
@@ -225,6 +239,7 @@ export default function LifeGame():JSX.Element {
     {city&&<CityQuest onClose={()=>setCity(false)} onComplete={()=>{setLife(s=>{if(!s||s.health<=0||s.completed)return s;const n=passTime(s,240);return remember({...n,money:n.money+150,shifts:n.shifts+1,stageActions:n.stageActions+1,skills:{...n.skills,learning:n.skills.learning+2},city:{...n.city,wellbeing:Math.min(100,n.city.wellbeing+3)}},'Completed a City Planning assignment. Earned $150.','career',9);});setNotice('City assignment complete. $150 earned, learning +2.');}}/>}
     {workshop&&<StoryWorkshopPanel life={life} onClose={()=>setWorkshop(false)} onSave={card=>setLife(s=>s?saveStoryDraft(s,card):s)} onApprove={(id,reviewer,choices)=>setLife(s=>s?approveStoryDraft(s,id,reviewer,choices):s)} onImport={data=>setLife(s=>s?importStoryCard(s,data):s)} onPlay={id=>{setLife(s=>s?startStoryCard(s,id):s);setWorkshop(false);closeComputer();setTab('story');}}/>}
     {music&&<MusicDesk onClose={()=>setMusic(false)}/>}
+    {streetTalk&&street&&(()=>{const who=talkTarget(street,streetTalk.id);if(!who)return null;return <StreetTalkSpotlight scene={talkScene(life,who)} reply={streetTalk.reply} onChoose={choice=>{const r=resolveTalk(life,who,choice,households);setLife(r.life);setStreetTalk({id:streetTalk.id,reply:r.reply});}} onClose={()=>setStreetTalk(null)}/>;})()}
     {storyOpen&&beatReady&&!life.completed&&!activeDialog&&STAGES[life.stage]?.events[life.chapter]&&<StoryBeat key={life.stage+'-'+life.chapter} stageName={STAGES[life.stage]!.name} chapter={life.chapter} total={STAGES[life.stage]!.events.length} event={STAGES[life.stage]!.events[life.chapter]!} onChoose={i=>{const ev=STAGES[life.stage]!.events[life.chapter]!;setLife(s=>s?chooseStory(s,i):s);const c=ev.choices[i];if(c)setNotice(c.consequence);}} onClose={()=>setStoryOpen(false)}/>}
     {momentOpen&&!storyOpen&&!activeDialog&&life.stage>=1&&!life.director.active&&life.family.moment&&<MomentSpotlight moment={life.family.moment} onRespond={r=>{setLife(s=>s?resolveHouseholdMoment(s,r):s);setMomentOpen(false);setNotice('You stepped into the moment. Read Memories for what it changed.');}} onClose={()=>setMomentOpen(false)}/>}
     {consequenceOpen&&!storyOpen&&!momentOpen&&!activeDialog&&(()=>{const beat=pendingConsequence(life);return beat?<ConsequenceSpotlight beat={beat} onRespond={r=>{setLife(s=>s?resolveConsequence(s,beat.id,r):s);setConsequenceOpen(false);setNotice('The record catches up with you. Read Memories for the fallout.');}} onClose={()=>setConsequenceOpen(false)}/>:null;})()}

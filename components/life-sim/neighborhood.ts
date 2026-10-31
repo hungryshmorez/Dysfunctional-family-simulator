@@ -219,3 +219,23 @@ export function parseNeighborhood(raw: unknown): NeighborhoodState | null {
   }
   return { npcs, lastTick: s.lastTick };
 }
+
+/**
+ * Change how a townsperson feels about the player after a face-to-face moment.
+ * Unknown ids are ignored; regard stays within 0..100.
+ */
+export function adjustRegard(
+  state: NeighborhoodState,
+  id: string,
+  delta: number,
+  mood: NpcMood,
+  event: string,
+  day: number
+): NeighborhoodState {
+  const prev = state.npcs[id];
+  if (!prev || !Number.isFinite(delta)) return state;
+  return {
+    ...state,
+    npcs: { ...state.npcs, [id]: { affinity: clampAffinity(prev.affinity + delta), mood, lastEvent: event.slice(0, 480), lastDay: day } },
+  };
+}

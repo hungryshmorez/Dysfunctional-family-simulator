@@ -28,7 +28,7 @@ import type { FurnitureItem, RoomLayout, Vec2 } from '@/components/room-organize
 
 export interface MoveCommand { id:number; target:Vec2; item?:FurnitureItem; person?:string }
 export interface WorldProps { storyScene?:DirectedScene|null; family?:FamilyState; minute?:number; activity?:string; sceneReview?:boolean; socialName?:string; onPerson?:(name:string)=>void }
-export interface WorldProps { controlled?:boolean; onPossess?:()=>void }
+export interface WorldProps { controlled?:boolean; onPossess?:()=>void; onStreetPerson?:(id:string,distance:number)=>void }
 export interface WorldProps { home:RoomLayout; stage:number; command:MoveCommand|null; paused:boolean; danger:boolean; movement:string; sprint:boolean; repel:number; onThreatState:(state:{phase:string;seconds:number})=>void; onManual:()=>void; onHurt:(amount:number)=>void; onProwlerCatch?:()=>void; onThreat:(message:string)=>void; onSelect:(item:FurnitureItem)=>void; onWalk:(point:Vec2)=>void; onArrive:(id:number,success:boolean)=>void; onError:(message:string)=>void }
 export function World(props:WorldProps):JSX.Element {
   const [fallback,setFallback]=useState(false);
@@ -214,7 +214,8 @@ export function World(props:WorldProps):JSX.Element {
     const resize=()=>{const w=el.clientWidth,h=el.clientHeight;renderer.setSize(w,h);camera.aspect=w/Math.max(1,h);camera.updateProjectionMatrix();};const observer=new ResizeObserver(resize);observer.observe(el);resize();
     let down={x:0,y:0};const ray=new THREE.Raycaster(),plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
     const start=(e:PointerEvent)=>{down={x:e.clientX,y:e.clientY};};
-    const pick=(e:PointerEvent)=>{if(live.current.paused||Math.hypot(e.clientX-down.x,e.clientY-down.y)>7)return;const rect=renderer.domElement.getBoundingClientRect();ray.setFromCamera(new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),camera);const hit=ray.intersectObjects([avatar,...interactables,...companions.filter(m=>m.visible)],true)[0];if(hit){if(hit.object.userData.avatarHit){live.current.onPossess?.();return;}if(hit.object.userData.person){live.current.onPerson?.(hit.object.userData.person);return;}const item=floor.items.find(i=>i.id===hit.object.userData.lifeItem);if(item){live.current.onSelect(item);return;}}
+    const pick=(e:PointerEvent)=>{if(live.current.paused||Math.hypot(e.clientX-down.x,e.clientY-down.y)>7)return;const rect=renderer.domElement.getBoundingClientRect();ray.setFromCamera(new THREE.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),camera);const hit=ray.intersectObjects([avatar,...interactables,...companions.filter(m=>m.visible),...streetPeople.pickables()],true)[0];if(hit){if(hit.object.userData.avatarHit){live.current.onPossess?.();return;}
+      const talkId=hit.object.userData.streetPerson as string|undefined;if(talkId){const at=streetPeople.locate(talkId);live.current.onStreetPerson?.(talkId,at?Math.hypot(at.x-avatar.position.x,at.z-avatar.position.z):Infinity);return;}if(hit.object.userData.person){live.current.onPerson?.(hit.object.userData.person);return;}const item=floor.items.find(i=>i.id===hit.object.userData.lifeItem);if(item){live.current.onSelect(item);return;}}
       const target=ray.ray.intersectPlane(plane,new THREE.Vector3());if(target)live.current.onWalk({x:target.x,z:target.z});};
     renderer.domElement.addEventListener('pointerdown',start);renderer.domElement.addEventListener('pointerup',pick);
     const contextLost=(event:Event)=>{event.preventDefault();setGraphicsError('The browser lost the graphics context while the scene was running. Close other graphics-heavy tabs and retry 3D.');setFallback(true);live.current.onError('3D stopped because the browser lost its graphics context.');};
